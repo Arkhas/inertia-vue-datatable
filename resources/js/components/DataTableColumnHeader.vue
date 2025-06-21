@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import type { Column } from '@tanstack/vue-table'
 import type { Task } from '../data/schema'
-import { ArrowDown, ArrowUp, ArrowUpDown, EyeOff } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from 'lucide-vue-next'
 
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { cn } from '../lib/utils'
+import { Button } from './ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from './ui/dropdown-menu'
 
 interface DataTableColumnHeaderProps {
   column: Column<Task, any>
@@ -39,7 +39,7 @@ export default {
           <span>{{ title }}</span>
           <ArrowDown v-if="column.getIsSorted() === 'desc'" class="ml-2 h-4 w-4" />
           <ArrowUp v-else-if=" column.getIsSorted() === 'asc'" class="ml-2 h-4 w-4" />
-          <ArrowUpDown v-else class="ml-2 h-4 w-4" />
+          <ChevronsUpDown v-else class="ml-2 h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">

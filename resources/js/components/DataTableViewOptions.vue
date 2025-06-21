@@ -4,7 +4,7 @@ import type { Task } from '../data/schema'
 import { computed } from 'vue'
 import { SlidersHorizontal } from 'lucide-vue-next'
 
-import { Button } from '@/components/ui/button'
+import { Button } from './ui/button'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from './ui/dropdown-menu'
 
 interface DataTableViewOptionsProps {
   table: Table<Task>

@@ -3,7 +3,7 @@ import type { Row } from '@tanstack/vue-table'
 import type { Task } from '../data/schema'
 import { computed } from 'vue'
 import { MoreHorizontal } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
+import { Button } from './ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from './ui/dropdown-menu'
 
 import { labels } from '../data/data'
 import { taskSchema } from '../data/schema'

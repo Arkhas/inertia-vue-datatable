@@ -3,8 +3,8 @@ import type { Table } from '@tanstack/vue-table'
 import { computed } from 'vue'
 
 import { X } from 'lucide-vue-next';
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
 
 import { priorities, statuses } from '../data/data'
 import DataTableFacetedFilter from './DataTableFacetedFilter.vue'

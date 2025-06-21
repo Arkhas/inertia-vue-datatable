@@ -5,17 +5,18 @@ import type { Task } from '../data/schema'
 import { computed } from 'vue'
 import { Check, PlusCircle } from 'lucide-vue-next'
 
-import { cn } from '@/lib/utils'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { cn } from '../lib/utils'
+import { Button } from './ui/button'
+import Badge from './ui/badge/Badge.vue'
 
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command'
+
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from './ui/command'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { Separator } from '@/components/ui/separator'
+} from './ui/popover'
+import { Separator } from './ui/separator'
 
 interface DataTableFacetedFilter {
   column?: Column<Task, any>

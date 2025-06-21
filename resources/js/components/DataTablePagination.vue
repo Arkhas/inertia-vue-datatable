@@ -6,14 +6,14 @@ import { ChevronRight } from 'lucide-vue-next';
 import { ChevronsLeft } from 'lucide-vue-next';
 import { ChevronsRight } from 'lucide-vue-next';
 
-import { Button } from '@/components/ui/button'
+import { Button } from './ui/button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from './ui/select'
 
 interface DataTablePaginationProps {
   table: Table<Task>
