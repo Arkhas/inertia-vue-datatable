@@ -1,0 +1,43 @@
+{
+  "name": "@arkhas/inertia-vue-datatable",
+  "version": "1.0.0",
+  "description": "A Laravel package for dynamic datatables using Inertia.js and Vue",
+  "type": "module",
+  "main": "resources/js/index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "laravel",
+    "inertia",
+    "vue",
+    "datatable",
+    "shadcn"
+  ],
+  "author": "Arkhas",
+  "license": "MIT",
+  "dependencies": {
+    "@inertiajs/vue3": "^1.0.0",
+    "@tanstack/vue-table": "^8.21.3",
+    "@vueuse/core": "^10.11.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.294.0",
+    "radix-vue": "^1.0.0",
+    "reka-ui": "^2.3.1",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7",
+    "vue": "^3.3.0",
+    "vue-sonner": "^2.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.5.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.3.2",
+    "vite": "^5.0.0"
+  }
+}
