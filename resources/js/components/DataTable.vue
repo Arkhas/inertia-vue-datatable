@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, watch} from 'vue'
+import {ref, watch, onMounted} from 'vue'
 import {valueUpdater} from '../lib/utils'
 import {computed} from 'vue'
 import {
@@ -93,6 +93,20 @@ const handleVisibility = ({column, visible}: { column: Column, visible: boolean 
     only: [config.name]
   });
 }
+
+// Initialize column visibility from session data when component is mounted
+onMounted(() => {
+  if (datatable.value?.visibleColumns && datatable.value?.columns) {
+    // Apply visibility settings from session to columns
+    datatable.value.columns.forEach(column => {
+      const visibleSetting = datatable.value.visibleColumns[column.name];
+      if (visibleSetting !== undefined) {
+        // Update the column's hidden property to match the visibility setting
+        column.hidden = !visibleSetting;
+      }
+    });
+  }
+});
 
 const columns = computed(() => {
   if (!datatable.value || !datatable.value.columns) return [];

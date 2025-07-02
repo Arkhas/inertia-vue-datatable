@@ -248,7 +248,7 @@ abstract class InertiaDatatable
         $pageSize    = $this->persistState('pageSize', $request->get('pageSize'), $this->defaultPageSize);
         $sort        = $this->persistState('sort', $request->get('sort'));
         $direction   = $this->persistState('direction', $request->get('direction'), 'asc');
-        $visibleCols = $this->persistState('visibleColumns', $request->get('visibleColumns'));
+        $visibleCols = $this->persistState('visibleColumns', $request->get('visibleColumns'), []);
 
         // Special handling for filters
         $filters = $request->get('filters');
@@ -275,7 +275,7 @@ abstract class InertiaDatatable
             'direction'          => fn() => $direction,
             'currentFilters'     => fn() => $this->getCurrentFilterValues($filters),
             'translations'       => fn() => $this->getTranslations(),
-            'visibleColumns'     => fn() => $visibleCols,
+            'visibleColumns'     => fn() => $visibleCols ?? [],
             'exportable'         => fn() => $this->table->isExportable(),
             'exportType'         => fn() => $this->table->getExportType(),
             'exportColumn'       => fn() => $this->table->getExportColumn(),
@@ -342,7 +342,19 @@ abstract class InertiaDatatable
     public function getColumns(): array
     {
         $columns = [];
+
+        // Get visibility settings from session
+        $visibleColumns = $this->getFromSession('visibleColumns', []);
+
         foreach ($this->table->getColumns() as $column) {
+            // Apply visibility settings from session
+            $visibleValue = Arr::get($visibleColumns, $column->getName());
+            if ($visibleValue === true) {
+                $column->hidden(false);
+            } elseif ($visibleValue === false) {
+                $column->hidden(true);
+            }
+
             $columnData = $column->toArray();
 
             // Add type for checkbox columns

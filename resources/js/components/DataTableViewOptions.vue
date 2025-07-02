@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, watch} from 'vue'
+import {computed, watch, onMounted} from 'vue'
 import {SlidersHorizontal} from 'lucide-vue-next'
 import {router} from "@inertiajs/vue3"
 
@@ -37,6 +37,20 @@ watch(() => props.table.visibleColumns, (newVisibleColumns) => {
     });
   }
 }, { deep: true });
+
+// Initialize column visibility from session data when component is mounted
+onMounted(() => {
+  if (props.table.visibleColumns && props.table.columns) {
+    // Apply visibility settings from session to columns
+    props.table.columns.forEach(column => {
+      const visibleSetting = props.table.visibleColumns[column.name];
+      if (visibleSetting !== undefined) {
+        // Update the column's hidden property to match the visibility setting
+        column.hidden = !visibleSetting;
+      }
+    });
+  }
+});
 
 const toggleVisibility = (column: Column, visible: boolean) => {
   // Create a params object with the visibility parameters
