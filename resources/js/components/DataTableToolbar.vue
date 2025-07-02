@@ -3,6 +3,7 @@ import type { Table } from '@tanstack/vue-table'
 import { computed, reactive, watch, onMounted } from 'vue'
 
 import { X, ChevronDown } from 'lucide-vue-next';
+import * as LucideIcons from 'lucide-vue-next';
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import {
@@ -110,6 +111,12 @@ const isFiltered = computed(() => {
   return (form.search !== null && form.search !== '') || 
          Object.values(form.filters).some(filter => filter && filter.length > 0)
 })
+
+// Function to get the icon component by name
+const getIconComponent = (iconName) => {
+  if (!iconName) return null;
+  return LucideIcons[iconName] || null;
+};
 </script>
 
 <template>
@@ -156,8 +163,18 @@ const isFiltered = computed(() => {
           <template v-if="action.type === 'group'">
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
-                <Button variant="outline" size="sm" class="h-8" :disabled="!hasSelectedRows">
+                <Button variant="outline" size="sm" class="h-8" :disabled="!hasSelectedRows" v-bind="action.props || {}">
+                  <component 
+                    :is="getIconComponent(action.icon)" 
+                    class="mr-2 h-4 w-4" 
+                    v-if="action.icon && action.iconPosition !== 'right'"
+                  />
                   {{ action.label }}
+                  <component 
+                    :is="getIconComponent(action.icon)" 
+                    class="ml-2 h-4 w-4" 
+                    v-if="action.icon && action.iconPosition === 'right'"
+                  />
                   <ChevronDown class="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -167,8 +184,19 @@ const isFiltered = computed(() => {
                   :key="groupAction.name"
                   @click="emit('action', groupAction.hasConfirmCallback ? groupAction.name + '_confirm' : groupAction.name)"
                   :disabled="!hasSelectedRows"
+                  v-bind="groupAction.props || {}"
                 >
+                  <component 
+                    :is="getIconComponent(groupAction.icon)" 
+                    class="mr-2 h-4 w-4" 
+                    v-if="groupAction.icon && groupAction.iconPosition !== 'right'"
+                  />
                   {{ groupAction.label }}
+                  <component 
+                    :is="getIconComponent(groupAction.icon)" 
+                    class="ml-2 h-4 w-4" 
+                    v-if="groupAction.icon && groupAction.iconPosition === 'right'"
+                  />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -181,8 +209,19 @@ const isFiltered = computed(() => {
               class="h-8"
               @click="emit('action', action.hasConfirmCallback ? action.name + '_confirm' : action.name)"
               :disabled="!hasSelectedRows"
+              v-bind="action.props || {}"
             >
+              <component 
+                :is="getIconComponent(action.icon)" 
+                class="mr-2 h-4 w-4" 
+                v-if="action.icon && action.iconPosition !== 'right'"
+              />
               {{ action.label }}
+              <component 
+                :is="getIconComponent(action.icon)" 
+                class="ml-2 h-4 w-4" 
+                v-if="action.icon && action.iconPosition === 'right'"
+              />
             </Button>
           </template>
         </template>
