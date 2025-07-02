@@ -35,6 +35,7 @@ const emits = defineEmits([
   "focusOutside",
   "interactOutside",
   "closeAutoFocus",
+  "select",
 ]);
 
 const delegatedProps = reactiveOmit(props, "class");
