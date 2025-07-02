@@ -2,9 +2,15 @@
 import type { Table } from '@tanstack/vue-table'
 import { computed, reactive, watch, onMounted } from 'vue'
 
-import { X } from 'lucide-vue-next';
+import { X, ChevronDown } from 'lucide-vue-next';
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
 
 import { priorities, statuses } from '../data/data'
 import DataTableFacetedFilter from './DataTableFacetedFilter.vue'
@@ -19,8 +25,16 @@ const form = reactive({
 
 const props = defineProps<{
   table: PageProps,
-  configName: string
+  configName: string,
+  selectedRows?: string[] | number[]
 }>()
+
+const emit = defineEmits(['action'])
+
+// Check if any rows are selected
+const hasSelectedRows = computed(() => {
+  return props.selectedRows && props.selectedRows.length > 0
+})
 
 // Watch for changes in the search input and reload the table
 watch(() => form.search, (newValue) => {
@@ -101,36 +115,78 @@ const isFiltered = computed(() => {
 <template>
   <div class="flex items-center justify-between">
     <div class="flex flex-1 items-center space-x-2">
-      <Input
-        placeholder="Filter..."
-        v-model="form.search"
-        class="h-8 w-[150px] lg:w-[250px]"
-      />
-      <template v-for="filter in table.filters" :key="filter.name">
-        <DataTableFacetedFilter
-          :title="filter.label"
-          :options="filter.filterOptions || Object.entries(filter.options).map(([value, label]) => ({ value, label }))"
-          @update:selected="(selected) => {
-            form.filters[filter.name] = selected;
-          }"
-          :selected="form.filters[filter.name] || []"
-        />
+      <!-- Show bulk actions when rows are selected -->
+      <template v-if="hasSelectedRows">
+        <div class="flex items-center space-x-2">
+          <span class="text-sm font-medium">{{ selectedRows.length }} selected</span>
+          <template v-for="action in table.actions" :key="action.name">
+            <!-- Handle action groups -->
+            <template v-if="action.type === 'group'">
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline" size="sm" class="h-8">
+                    {{ action.label }}
+                    <ChevronDown class="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem 
+                    v-for="groupAction in action.actions" 
+                    :key="groupAction.name"
+                    @click="emit('action', groupAction.hasConfirmCallback ? groupAction.name + '_confirm' : groupAction.name)"
+                  >
+                    {{ groupAction.label }}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </template>
+            <!-- Handle single actions -->
+            <template v-else>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                class="h-8"
+                @click="emit('action', action.hasConfirmCallback ? action.name + '_confirm' : action.name)"
+              >
+                {{ action.label }}
+              </Button>
+            </template>
+          </template>
+        </div>
       </template>
+      <!-- Show filters when no rows are selected -->
+      <template v-else>
+        <Input
+          placeholder="Filter..."
+          v-model="form.search"
+          class="h-8 w-[150px] lg:w-[250px]"
+        />
+        <template v-for="filter in table.filters" :key="filter.name">
+          <DataTableFacetedFilter
+            :title="filter.label"
+            :options="filter.filterOptions || Object.entries(filter.options).map(([value, label]) => ({ value, label }))"
+            @update:selected="(selected) => {
+              form.filters[filter.name] = selected;
+            }"
+            :selected="form.filters[filter.name] || []"
+          />
+        </template>
 
-      <Button
-        v-if="isFiltered"
-        variant="ghost"
-        class="h-8 px-2 lg:px-3"
-        @click="() => {
-          form.search = null;
-          form.filters = {};
-          handleSearch(null);
-          handleFilters({});
-        }"
-      >
-        Reset
-        <X class="ml-2 h-4 w-4" />
-      </Button>
+        <Button
+          v-if="isFiltered"
+          variant="ghost"
+          class="h-8 px-2 lg:px-3"
+          @click="() => {
+            form.search = null;
+            form.filters = {};
+            handleSearch(null);
+            handleFilters({});
+          }"
+        >
+          Reset
+          <X class="ml-2 h-4 w-4" />
+        </Button>
+      </template>
     </div>
      <DataTableViewOptions :table="table" :config-name="configName" />
   </div>
