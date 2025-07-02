@@ -28,6 +28,14 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from './ui/dialog';
+import {
   Column,
   TableAction,
   TableActionGroup,
@@ -45,10 +53,13 @@ const config = defineProps({
   },
 })
 
-// State for selected rows
+// State variables
 const selectedRows = ref(new Set())
+const showConfirmDialog = ref(false)
+const pendingAction = ref(null)
+const pendingRowId = ref(null)
 
-  // Toggle selection for a single row
+// Toggle selection for a single row
 const toggleRowSelection = (rowId) => {
   if (!rowId) return;
 
@@ -95,55 +106,46 @@ watch(() => datatable.value?.visibleColumns, (newVisibleColumns) => {
   if (newVisibleColumns && datatable.value?.columns) {
     // Update column hidden properties based on visibleColumns
     datatable.value.columns.forEach(column => {
-      const visibleSetting = newVisibleColumns[column.name];
+      const visibleSetting = newVisibleColumns[column.name]
       if (visibleSetting !== undefined && column.hidden !== !visibleSetting) {
         // Update the column's hidden property to match the visibility setting
-        column.hidden = !visibleSetting;
+        column.hidden = !visibleSetting
       }
-    });
+    })
   }
-}, { deep: true });
+}, { deep: true })
 
-// Handle sort event from DataTableColumnHeader
-const handleSort = ({column, direction}: { column: Column, direction: 'asc' | 'desc' | null }) => {
-  // Create a params object with the sort parameters
-  const params: Record<string, any> = {};
+// Helper function to send requests to the server
+const sendRequest = (data, onlyActionResult = false) => {
+  const params = {}
+  params[config.name] = data
 
-  // Add the sort parameters to the specific datatable config
-  params[config.name] = {
-    sort: column.name,
-    direction: direction
-  };
-
-  const currentPath = typeof window !== 'undefined' && window.location ? window.location.pathname : '/';
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/'
   router.post(currentPath, params, {
     preserveState: true,
     preserveScroll: true,
     only: [config.name]
-  });
+  })
+}
+
+// Handle sort event from DataTableColumnHeader
+const handleSort = ({column, direction}: { column: Column, direction: 'asc' | 'desc' | null }) => {
+  sendRequest({
+    sort: column.name,
+    direction: direction
+  })
 }
 
 // Handle visibility event from DataTableColumnHeader
 const handleVisibility = ({column, visible}: { column: Column, visible: boolean }) => {
-  // Create a params object with the visibility parameters
-  const params: Record<string, any> = {};
+  // Update the column properties locally for immediate reactivity
+  column.hidden = !visible
 
-  // Add the visibility parameters to the specific datatable config
-  params[config.name] = {
+  sendRequest({
     visibleColumns: {
       [column.name]: visible
     }
-  };
-
-  // Update the column properties locally for immediate reactivity
-  column.hidden = !visible;
-
-  const currentPath = typeof window !== 'undefined' && window.location ? window.location.pathname : '/';
-  router.post(currentPath, params, {
-    preserveState: true,
-    preserveScroll: true,
-    only: [config.name]
-  });
+  })
 }
 
 // Initialize column visibility from session data when component is mounted
@@ -151,54 +153,199 @@ onMounted(() => {
   if (datatable.value?.visibleColumns && datatable.value?.columns) {
     // Apply visibility settings from session to columns
     datatable.value.columns.forEach(column => {
-      const visibleSetting = datatable.value.visibleColumns[column.name];
+      const visibleSetting = datatable.value.visibleColumns[column.name]
       if (visibleSetting !== undefined) {
         // Update the column's hidden property to match the visibility setting
-        column.hidden = !visibleSetting;
+        column.hidden = !visibleSetting
       }
-    });
+    })
   }
-});
+})
 
 const columns = computed(() => {
-  if (!datatable.value || !datatable.value.columns) return [];
-  return datatable.value.columns.filter(column => !column.hidden);
-});
+  if (!datatable.value || !datatable.value.columns) return []
+  return datatable.value.columns.filter(column => !column.hidden)
+})
 
 // Function to get the icon component by name
 const getIconComponent = (iconName) => {
-  if (!iconName) return null;
-  return LucideIcons[iconName] || null;
-};
+  if (!iconName) return null
+  return LucideIcons[iconName] || null
+}
+
+// Extract the base action name from an action with suffix
+const getActionName = (actionName) => {
+  if (!actionName) return ''
+
+  // Remove '_confirm' suffix if present
+  let name = actionName.endsWith('_confirm') 
+    ? actionName.substring(0, actionName.length - '_confirm'.length) 
+    : actionName
+
+  // Extract base name (e.g., "delete" from "delete_1_task(s)")
+  const baseMatch = name.match(/^([^_]+)(?:_\d+.*)?$/)
+  return baseMatch && baseMatch[1] ? baseMatch[1] : name
+}
+
+// Alias for backward compatibility
+const getBaseActionName = getActionName
+
+// Helper function to send action requests
+const sendActionRequest = (actionName, ids, clearSelection = false) => {
+  sendRequest({
+    action: actionName,
+    ids: ids
+  }, true)
+
+  // Clear selection if needed (for non-confirmation actions)
+  if (clearSelection) {
+    selectedRows.clear()
+  }
+}
+
+// Handle toolbar action
+const handleToolbarAction = (actionName) => {
+  // Reset pendingRowId to ensure row actions don't interfere with toolbar actions
+  pendingRowId.value = null
+
+  // Check if this is a confirmation action
+  if (actionName.endsWith('_confirm')) {
+    pendingAction.value = actionName
+    sendActionRequest(actionName, Array.from(selectedRows))
+  } else {
+    // Regular action without confirmation
+    sendActionRequest(actionName, Array.from(selectedRows), true)
+  }
+}
+
+// Handle row action click
+const handleRowAction = (action, row) => {
+  if (!action) return
+
+  const actionName = action.hasConfirmCallback ? action.name + '_confirm' : action.name
+  const rowId = row && row._id ? row._id : null
+
+  // If confirmation action, store the pending action and row ID
+  if (action.hasConfirmCallback) {
+    pendingAction.value = actionName
+    pendingRowId.value = rowId
+  }
+
+  // Send the request
+  sendActionRequest(actionName, rowId ? [rowId] : [])
+}
+
+// Watch handlers for confirmation dialog and data changes
+
+// Watch for changes in datatable.value.actionResult to show confirmation dialog
+watch(() => datatable.value?.actionResult?.confirmData, (newConfirmData) => {
+  if (newConfirmData) {
+    showConfirmDialog.value = true
+
+    // Store the action name and row ID for redundancy
+    if (datatable.value?.actionResult) {
+      if (pendingAction.value) {
+        datatable.value.actionResult.pendingActionName = pendingAction.value
+      }
+      if (pendingRowId.value) {
+        datatable.value.actionResult.pendingRowId = pendingRowId.value
+      }
+    }
+  } else {
+    showConfirmDialog.value = false
+  }
+})
+
+// Watch for changes in datatable.value.data to update selectedRows
+watch(() => datatable.value?.data?.data, (newData, oldData) => {
+  if (newData && selectedRows.value.size > 0) {
+    // Get the IDs of the new data
+    const newIds = new Set(newData.map(row => row._id).filter(Boolean))
+
+    // Remove any selected rows that no longer exist in the data
+    for (const id of selectedRows.value) {
+      if (!newIds.has(id)) {
+        selectedRows.value.delete(id)
+      }
+    }
+  }
+}, { deep: true })
+
+// Handle confirm action
+const handleConfirm = () => {
+  if (!datatable.value?.actionResult?.confirmData) return
+
+  // Get action name with fallbacks
+  let actionName = pendingAction.value || 
+                  datatable.value?.actionResult?.pendingActionName || ''
+
+  if (!actionName) return
+
+  // Get the base action name
+  const baseActionName = getActionName(actionName)
+
+  // Get row ID with fallbacks
+  let rowId = pendingRowId.value || 
+             datatable.value?.actionResult?.pendingRowId || null
+
+  // Determine which IDs to send
+  // If we have a row ID, use that (for row actions)
+  // Otherwise, use the selected rows (for toolbar actions)
+  const ids = rowId ? [rowId] : Array.from(selectedRows.value)
+
+  // Send request to server
+  sendActionRequest(baseActionName, ids)
+
+  // Reset state
+  showConfirmDialog.value = false
+  pendingAction.value = null
+  pendingRowId.value = null
+}
+
+// Handle cancel action
+const handleCancel = () => {
+  showConfirmDialog.value = false
+  pendingAction.value = null
+  pendingRowId.value = null
+}
 
 </script>
 
 <template>
   <div class="space-y-4">
+    <!-- Confirmation Dialog -->
+    <Dialog :open="showConfirmDialog" @update:open="showConfirmDialog = $event">
+      <DialogContent class="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{ datatable?.actionResult?.confirmData?.title || 'Confirmation' }}</DialogTitle>
+          <DialogDescription>
+            {{ datatable?.actionResult?.confirmData?.message || 'Are you sure you want to perform this action?' }}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="flex items-center justify-end space-x-2">
+          <Button
+            variant="outline"
+            @click="handleCancel"
+          >
+            {{ datatable?.actionResult?.confirmData?.cancel || 'Cancel' }}
+          </Button>
+          <Button
+            variant="default"
+            @click="handleConfirm"
+            :disabled="datatable?.actionResult?.confirmData?.disabled"
+          >
+            {{ datatable?.actionResult?.confirmData?.confirm || 'Confirm' }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <DataTableToolbar 
       v-if="datatable" 
       :table="datatable" 
       :config-name="config.name"
       :selected-rows="Array.from(selectedRows)"
-      @action="(actionName) => {
-        // Create a params object with the action parameters
-        const params = {};
-        params[config.name] = {
-          action: actionName,
-          ids: Array.from(selectedRows)
-        };
-
-        // Send the request to the server
-        const currentPath = typeof window !== 'undefined' && window.location ? window.location.pathname : '/';
-        router.post(currentPath, params, {
-          preserveState: true,
-          preserveScroll: true,
-          only: [config.name]
-        });
-
-        // Clear selection after action
-        selectedRows.clear();
-      }"
+      @action="handleToolbarAction"
     />
     <div v-if="datatable" class="rounded-md border">
       <Table>
@@ -255,26 +402,9 @@ const getIconComponent = (iconName) => {
                         <template v-if="row[column.name + '_action'] && row[column.name + '_action'].actions">
                           <template v-for="(action, index) in row[column.name + '_action'].actions" :key="action && action.name ? action.name : index">
                             <DropdownMenuItem 
-                              @click="() => {
-                                try {
-                                  const params = {};
-                                  params[config.name] = {
-                                    action: action && action.hasConfirmCallback ? action.name + '_confirm' : (action ? action.name : ''),
-                                    ids: row && row._id ? [row._id] : []
-                                  };
-
-                                  const currentPath = typeof window !== 'undefined' && window.location ? window.location.pathname : '/';
-                                  router.post(currentPath, params, {
-                                    preserveState: true,
-                                    preserveScroll: true,
-                                    only: [config.name]
-                                  });
-                                } catch (error) {
-                                  console.error('Error in action click handler:', error);
-                                }
-                              }"
+                              @click="() => handleRowAction(action, row)"
                             >
-                              {{ action.label }}
+                              {{ getBaseActionName(action.label) }}
                             </DropdownMenuItem>
                           </template>
                         </template>

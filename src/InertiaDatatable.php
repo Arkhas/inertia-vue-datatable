@@ -146,7 +146,7 @@ abstract class InertiaDatatable
             return null;
         }
 
-        $model = $this->table->getQuery()->find($ids[0]);
+        $model = $this->table->getQuery()->clone()->find($ids[0]);
         if (!$model) {
             return null;
         }
