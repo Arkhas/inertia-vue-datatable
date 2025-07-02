@@ -2,6 +2,7 @@
 import type { Component } from 'vue'
 import { computed, ref, watch } from 'vue'
 import { Check, PlusCircle } from 'lucide-vue-next'
+import * as LucideIcons from 'lucide-vue-next'
 
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
@@ -63,6 +64,11 @@ const updateSelected = (value: string, isSelected: boolean) => {
 const clearSelected = () => {
   selectedValuesSet.value = new Set()
   emit('update:selected', [])
+}
+
+// Function to get the icon component by name
+const getIconComponent = (iconName) => {
+  return typeof iconName === 'string' ? LucideIcons[iconName] || null : iconName
 }
 </script>
 
@@ -129,7 +135,7 @@ const clearSelected = () => {
               >
                 <Check :class="cn('h-4 w-4')" />
               </div>
-              <component :is="option.icon" v-if="option.icon" class="mr-2 h-4 w-4 text-muted-foreground" />
+              <component :is="getIconComponent(option.icon)" v-if="option.icon" class="mr-2 h-4 w-4 text-muted-foreground" />
               <span>{{ option.label }}</span>
               <span v-if="option.count" class="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
                 {{ option.count }}

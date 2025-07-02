@@ -18,6 +18,7 @@ import {Checkbox} from './ui/checkbox'
 import DataTableColumnHeader from './DataTableColumnHeader.vue'
 import DataTableRowActions from './DataTableRowActions.vue'
 import {FlexRender} from "@tanstack/vue-table";
+import * as LucideIcons from 'lucide-vue-next';
 import {
   Column,
   TableAction,
@@ -113,6 +114,11 @@ const columns = computed(() => {
   return datatable.value.columns.filter(column => !column.hidden);
 });
 
+// Function to get the icon component by name
+const getIconComponent = (iconName) => {
+  return LucideIcons[iconName] || null;
+};
+
 </script>
 
 <template>
@@ -138,7 +144,23 @@ const columns = computed(() => {
             <TableRow
                 v-for="row in datatable.data.data"
             >
-              <TableCell v-html="row[column.name]" v-for="column in columns">
+              <TableCell v-for="column in columns" :key="column.name">
+                <template v-if="column.hasIcon && row[column.name + '_icon']">
+                  <div class="flex items-center">
+                    <component 
+                      :is="getIconComponent(row[column.name + '_icon'])" 
+                      class="mr-2 h-4 w-4" 
+                      v-if="column.iconPosition !== 'right'"
+                    />
+                    <span v-html="row[column.name]"></span>
+                    <component 
+                      :is="getIconComponent(row[column.name + '_icon'])" 
+                      class="ml-2 h-4 w-4" 
+                      v-if="column.iconPosition === 'right'"
+                    />
+                  </div>
+                </template>
+                <span v-else v-html="row[column.name]"></span>
               </TableCell>
             </TableRow>
           </template>

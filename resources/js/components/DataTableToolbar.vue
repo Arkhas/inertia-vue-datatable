@@ -49,7 +49,7 @@ const handleSearch = (searchValue: string | null) => {
   };
 
   // Send the request to the server
-  router.get(window.location.pathname, params, {
+  router.post(window.location.pathname, params, {
     preserveState: true,
     preserveScroll: true,
     only: [props.configName]
@@ -67,7 +67,7 @@ const handleFilters = (filters: Record<string, string[]>) => {
   };
 
   // Send the request to the server
-  router.get(window.location.pathname, params, {
+  router.post(window.location.pathname, params, {
     preserveState: true,
     preserveScroll: true,
     only: [props.configName]
