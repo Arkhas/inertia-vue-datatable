@@ -1,14 +1,11 @@
 <script setup lang="ts">
-import type { Column } from '@tanstack/vue-table'
 import type { Component } from 'vue'
-import type { Task } from '../data/schema'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Check, PlusCircle } from 'lucide-vue-next'
 
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
 import Badge from './ui/badge/Badge.vue'
-
 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from './ui/command'
 import {
@@ -19,19 +16,54 @@ import {
 import { Separator } from './ui/separator'
 
 interface DataTableFacetedFilter {
-  column?: Column<Task, any>
   title?: string
   options: {
     label: string
     value: string
     icon?: Component
+    count?: number
   }[]
+  selected?: string[]
 }
 
 const props = defineProps<DataTableFacetedFilter>()
+const emit = defineEmits<{
+  'update:selected': [selected: string[]]
+}>()
 
-const facets = computed(() => props.column?.getFacetedUniqueValues())
-const selectedValues = computed(() => new Set(props.column?.getFilterValue() as string[]))
+const selectedValuesSet = ref(new Set<string>())
+
+// Initialize selectedValuesSet from props.selected
+watch(() => props.selected, (newSelected) => {
+  if (newSelected) {
+    selectedValuesSet.value = new Set(newSelected)
+  } else {
+    selectedValuesSet.value = new Set()
+  }
+}, { immediate: true })
+
+// Computed property to get the selected values as an array
+const selectedValues = computed(() => selectedValuesSet.value)
+
+// Update the selected values and emit the change
+const updateSelected = (value: string, isSelected: boolean) => {
+  const newSet = new Set(selectedValuesSet.value)
+
+  if (isSelected) {
+    newSet.add(value)
+  } else {
+    newSet.delete(value)
+  }
+
+  selectedValuesSet.value = newSet
+  emit('update:selected', Array.from(newSet))
+}
+
+// Clear all selected values
+const clearSelected = () => {
+  selectedValuesSet.value = new Set()
+  emit('update:selected', [])
+}
 </script>
 
 <template>
@@ -82,19 +114,9 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
               v-for="option in options"
               :key="option.value"
               :value="option"
-              @select="(e) => {
-                console.log(e.detail.value)
+              @select="() => {
                 const isSelected = selectedValues.has(option.value)
-                if (isSelected) {
-                  selectedValues.delete(option.value)
-                }
-                else {
-                  selectedValues.add(option.value)
-                }
-                const filterValues = Array.from(selectedValues)
-                column?.setFilterValue(
-                  filterValues.length ? filterValues : undefined,
-                )
+                updateSelected(option.value, !isSelected)
               }"
             >
               <div
@@ -109,8 +131,8 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
               </div>
               <component :is="option.icon" v-if="option.icon" class="mr-2 h-4 w-4 text-muted-foreground" />
               <span>{{ option.label }}</span>
-              <span v-if="facets?.get(option.value)" class="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
-                {{ facets.get(option.value) }}
+              <span v-if="option.count" class="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
+                {{ option.count }}
               </span>
             </CommandItem>
           </CommandGroup>
@@ -121,7 +143,7 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
               <CommandItem
                 :value="{ label: 'Clear filters' }"
                 class="justify-center text-center"
-                @select="column?.setFilterValue(undefined)"
+                @select="clearSelected"
               >
                 Clear filters
               </CommandItem>
