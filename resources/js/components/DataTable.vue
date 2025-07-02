@@ -36,25 +36,23 @@ const config = defineProps({
   },
 })
 
-// Make datatable reactive using computed to ensure it updates when props change
 const datatable = computed(() => {
-  // Ensure props[config.name] exists, otherwise return a default PageProps object
-  return usePage().props[config.name] ? usePage().props[config.name] as PageProps : {
-    columns: [],
-    filters: [],
-    actions: [],
-    currentFilters: {},
-    data: {
-      data: [],
-      current_page: 1,
-      last_page: 1,
-      total: 0,
-      per_page: 10
-    },
-    pageSize: 10,
-    availablePageSizes: [10, 25, 50, 100]
-  } as PageProps;
+  return usePage().props[config.name] as PageProps;
 });
+
+// Watch for changes in datatable.value.visibleColumns to update column hidden properties
+watch(() => datatable.value?.visibleColumns, (newVisibleColumns) => {
+  if (newVisibleColumns && datatable.value?.columns) {
+    // Update column hidden properties based on visibleColumns
+    datatable.value.columns.forEach(column => {
+      const visibleSetting = newVisibleColumns[column.name];
+      if (visibleSetting !== undefined && column.hidden !== !visibleSetting) {
+        // Update the column's hidden property to match the visibility setting
+        column.hidden = !visibleSetting;
+      }
+    });
+  }
+}, { deep: true });
 
 // Handle sort event from DataTableColumnHeader
 const handleSort = ({column, direction}: { column: Column, direction: 'asc' | 'desc' | null }) => {
@@ -63,17 +61,43 @@ const handleSort = ({column, direction}: { column: Column, direction: 'asc' | 'd
 
   // Add the sort parameters to the specific datatable config
   params[config.name] = {
-    sort: column.key,
-    column: column.name,
+    sort: column.name,
     direction: direction
   };
 
-  router.get(window.location.pathname, params, {
+  router.post(window.location.pathname, params, {
     preserveState: true,
     preserveScroll: true,
     only: [config.name]
   });
 }
+
+// Handle visibility event from DataTableColumnHeader
+const handleVisibility = ({column, visible}: { column: Column, visible: boolean }) => {
+  // Create a params object with the visibility parameters
+  const params: Record<string, any> = {};
+
+  // Add the visibility parameters to the specific datatable config
+  params[config.name] = {
+    visibleColumns: {
+      [column.name]: visible
+    }
+  };
+
+  // Update the column properties locally for immediate reactivity
+  column.hidden = !visible;
+
+  router.post(window.location.pathname, params, {
+    preserveState: true,
+    preserveScroll: true,
+    only: [config.name]
+  });
+}
+
+const columns = computed(() => {
+  if (!datatable.value || !datatable.value.columns) return [];
+  return datatable.value.columns.filter(column => !column.hidden);
+});
 
 </script>
 
@@ -84,12 +108,13 @@ const handleSort = ({column, direction}: { column: Column, direction: 'asc' | 'd
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead v-for="column in datatable.columns" :key="column.name">
+            <TableHead v-for="column in columns" :key="column.name">
               <DataTableColumnHeader
                   :column="column"
                   :currentSort="datatable.sort"
                   :currentDirection="datatable.direction"
                   @sort="handleSort"
+                  @visibility="handleVisibility"
               />
             </TableHead>
           </TableRow>
@@ -99,14 +124,14 @@ const handleSort = ({column, direction}: { column: Column, direction: 'asc' | 'd
             <TableRow
                 v-for="row in datatable.data.data"
             >
-              <TableCell v-html="row[column.name]" v-for="column in datatable.columns">
+              <TableCell v-html="row[column.name]" v-for="column in columns">
               </TableCell>
             </TableRow>
           </template>
 
           <TableRow v-else>
             <TableCell
-                :colspan="datatable.columns.length"
+                :colspan="columns.length"
                 class="h-24 text-center"
             >
               No results.

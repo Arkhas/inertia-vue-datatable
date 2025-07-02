@@ -15,6 +15,7 @@ use Error;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -28,7 +29,7 @@ abstract class InertiaDatatable
     protected array         $availablePageSizes     = [10, 25, 100];
     protected array         $additionalSearchFields = [];
     protected ?Request      $request                = null;
-    private string          $name = 'dt';
+    private string          $name                   = 'dt';
 
     public function __construct()
     {
@@ -284,6 +285,12 @@ abstract class InertiaDatatable
     private function persistState(string $key, $value, $default = null)
     {
         if ($value !== null) {
+            // Special handling for visibleColumns to merge with existing values
+            if ($key === 'visibleColumns') {
+                $existingValue = $this->getFromSession($key, []);
+                $value = array_merge($existingValue, $value);
+            }
+
             $this->storeInSession($key, $value);
 
             return $value;
@@ -336,15 +343,7 @@ abstract class InertiaDatatable
     {
         $columns = [];
         foreach ($this->table->getColumns() as $column) {
-            $columnData = method_exists($column, 'toArray') ? $column->toArray() : [
-                'name'         => $column->getName(),
-                'label'        => $column->getLabel(),
-                'hasIcon'      => method_exists($column, 'hasIcon') ? $column->hasIcon() : (method_exists($column, 'getIconCallback') && $column->getIconCallback() !== null),
-                'sortable'     => method_exists($column, 'isSortable') ? $column->isSortable() : true,
-                'searchable'   => method_exists($column, 'isSearchable') ? $column->isSearchable() : true,
-                'toggable'     => method_exists($column, 'isToggable') ? $column->isToggable() : true,
-                'iconPosition' => method_exists($column, 'getIconPosition') ? $column->getIconPosition() : 'left'
-            ];
+            $columnData = $column->toArray();
 
             // Add type for checkbox columns
             if ($column instanceof CheckboxColumn) {
@@ -403,6 +402,22 @@ abstract class InertiaDatatable
 
         $searchTerm = $request->get('search');
 
+        // Get visibility settings from session
+        $visibleColumns = $this->getFromSession('visibleColumns', []);
+
+        foreach ($columns as $column) {
+            // Check request first, then session
+            $visibleValue = Arr::get($request, 'visibleColumns.' . $column->getName());
+            if ($visibleValue === null) {
+                $visibleValue = Arr::get($visibleColumns, $column->getName());
+            }
+
+            if ($visibleValue === true) {
+                $column->hidden(false);
+            } elseif ($visibleValue === false) {
+                $column->hidden(true);
+            }
+        }
         if ($searchTerm) {
             $query->where(function ($q) use ($searchTerm, $columns) {
                 foreach ($columns as $column) {
@@ -456,6 +471,7 @@ abstract class InertiaDatatable
 
         // Get sort from request or session
         $sort = $request->get('sort');
+
         if ($sort !== null) {
             $direction = $request->get('direction', 'asc');
             // Store sort and direction in session

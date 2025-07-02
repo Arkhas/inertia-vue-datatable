@@ -244,6 +244,13 @@ class Column
         return $this->width;
     }
 
+    public function hidden($hidden = true): self
+    {
+        $this->hidden = $hidden;
+
+        return $this;
+    }
+
     public function getHidden(): bool
     {
         return $this->hidden;

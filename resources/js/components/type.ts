@@ -2,7 +2,7 @@ export interface Column {
   key: string;
   name: string;
   label: string;
-  isVisible: boolean;
+  hidden?: boolean;
   hasIcon?: boolean;
   type?: string;
   sortable?: boolean;

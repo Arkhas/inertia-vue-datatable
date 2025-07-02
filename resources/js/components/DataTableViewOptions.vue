@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import {computed} from 'vue'
+import {computed, watch} from 'vue'
 import {SlidersHorizontal} from 'lucide-vue-next'
+import {router} from "@inertiajs/vue3"
 
 import {Button} from './ui/button'
 import {
@@ -23,10 +24,40 @@ const columns = computed(() => props.table.columns
         column => column.toggable && column.label,
     ))
 
-const toggleVisibility = (column: Column, value: string | null) => {
-  column.hidden = value;
-  console.log(column)
-  console.log(value)
+// Watch for changes in table.visibleColumns to update column hidden properties
+watch(() => props.table.visibleColumns, (newVisibleColumns) => {
+  if (newVisibleColumns && props.table.columns) {
+    // Update column hidden properties based on visibleColumns
+    props.table.columns.forEach(column => {
+      const visibleSetting = newVisibleColumns[column.name];
+      if (visibleSetting !== undefined && column.hidden !== !visibleSetting) {
+        // Update the column's hidden property to match the visibility setting
+        column.hidden = !visibleSetting;
+      }
+    });
+  }
+}, { deep: true });
+
+const toggleVisibility = (column: Column, visible: boolean) => {
+  // Create a params object with the visibility parameters
+  const params: Record<string, any> = {};
+
+  // Add the visibility parameters to the specific datatable config
+  params[props.configName] = {
+    visibleColumns: {
+      [column.name]: visible
+    }
+  };
+
+  // Update the column properties locally for immediate reactivity
+  column.hidden = !visible;
+
+  // Send the request to the server
+  router.post(window.location.pathname, params, {
+    preserveState: true,
+    preserveScroll: true,
+    only: [props.configName]
+  });
 }
 </script>
 
@@ -51,7 +82,7 @@ const toggleVisibility = (column: Column, value: string | null) => {
           :key="column.name"
           class="capitalize"
           :model-value="!column.hidden"
-          @update:model-value="(value) => toggleVisibility(column, !!value)"
+          @update:model-value="(value) => toggleVisibility(column, value)"
       >
         {{ column.label }}
       </DropdownMenuCheckboxItem>

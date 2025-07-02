@@ -34,7 +34,7 @@ watch([() => props.currentSort, () => props.currentDirection], () => {
 
 // Helper function to update sortDirection based on props
 const updateSortDirection = () => {
-  if (props.currentSort === props.column.key && props.currentDirection) {
+  if (props.currentSort === props.column.name && props.currentDirection) {
     sortDirection.value = props.currentDirection
   } else {
     sortDirection.value = null
