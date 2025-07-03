@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, watch, onMounted, inject, provide} from 'vue'
+import {computed, watch, onMounted, inject, provide, ref, nextTick} from 'vue'
 import {useTranslation} from '../i18n/useTranslation'
 import {SlidersHorizontal} from 'lucide-vue-next'
 import {router} from "@inertiajs/vue3"
@@ -14,16 +14,32 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import {Column, PageProps} from "@/components/type";
+import {Input} from './ui/input'
 
 const props = defineProps<{
   table: PageProps,
   configName: string
 }>()
 
-const columns = computed(() => props.table.columns
+const searchQuery = ref('')
+const searchInputRef = ref(null)
+const isDropdownOpen = ref(false)
+
+const allToggableColumns = computed(() => props.table.columns
     .filter(
         column => column.toggable && column.label,
     ))
+
+const columns = computed(() => {
+  if (!searchQuery.value) {
+    return allToggableColumns.value
+  }
+
+  const query = searchQuery.value.toLowerCase()
+  return allToggableColumns.value.filter(
+    column => column.label.toLowerCase().includes(query)
+  )
+})
 
 // Watch for changes in table.visibleColumns to update column hidden properties
 watch(() => props.table.visibleColumns, (newVisibleColumns) => {
@@ -80,10 +96,26 @@ const { t } = useTranslation();
 
 // Also provide it to child components in case they don't have access to the injected value
 provide('t', t);
+
+// Function to focus the search input
+const focusSearchInput = () => {
+  nextTick(() => {
+    if (searchInputRef.value) {
+      searchInputRef.value.focus();
+    }
+  });
+};
+
+// Watch for dropdown open state changes
+watch(isDropdownOpen, (newValue) => {
+  if (newValue) {
+    focusSearchInput();
+  }
+});
 </script>
 
 <template>
-  <DropdownMenu>
+  <DropdownMenu v-model:open="isDropdownOpen">
     <DropdownMenuTrigger as-child>
       <Button
           variant="outline"
@@ -94,20 +126,42 @@ provide('t', t);
         {{ t('view') }}
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" class="w-[150px]">
-      <DropdownMenuLabel>{{ t('toggle_columns') }}</DropdownMenuLabel>
+    <DropdownMenuContent 
+      align="end" 
+      class="w-[250px]"
+      @openAutoFocus.prevent="focusSearchInput"
+    >
+      <div class="px-2 py-2">
+        <div class="flex items-center">
+          <Input 
+            ref="searchInputRef"
+            v-model="searchQuery"
+            :placeholder="t('search_placeholder')"
+            class="h-8 w-full"
+            @select.prevent
+            @click.stop
+            @keydown.stop
+            @focus.stop
+          />
+        </div>
+      </div>
       <DropdownMenuSeparator/>
 
-      <DropdownMenuCheckboxItem
-          v-for="column in columns"
-          :key="column.name"
-          class="capitalize"
-          :model-value="!column.hidden"
-          @update:model-value="(value) => toggleVisibility(column, value)"
-          @select="(event) => event.preventDefault()"
-      >
-        {{ column.label }}
-      </DropdownMenuCheckboxItem>
+      <div class="max-h-[300px] overflow-auto">
+        <DropdownMenuCheckboxItem
+            v-for="column in columns"
+            :key="column.name"
+            class="capitalize"
+            :model-value="!column.hidden"
+            @update:model-value="(value) => toggleVisibility(column, value)"
+            @select="(event) => event.preventDefault()"
+        >
+          {{ column.label }}
+        </DropdownMenuCheckboxItem>
+        <div v-if="columns.length === 0" class="px-2 py-2 text-sm text-gray-500 text-center">
+          {{ t('no_results') }}
+        </div>
+      </div>
     </DropdownMenuContent>
   </DropdownMenu>
 </template>

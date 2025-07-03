@@ -15,5 +15,7 @@
   "go_to_next_page": "Go to next page",
   "go_to_last_page": "Go to last page",
   "view": "View",
-  "toggle_columns": "Toggle columns"
+  "toggle_columns": "Toggle columns",
+  "search_columns": "Search columns",
+  "search_placeholder": "Search..."
 }

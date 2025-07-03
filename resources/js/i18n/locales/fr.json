@@ -15,5 +15,7 @@
   "go_to_next_page": "Aller à la page suivante",
   "go_to_last_page": "Aller à la dernière page",
   "view": "Affichage",
-  "toggle_columns": "Afficher/Masquer les colonnes"
+  "toggle_columns": "Afficher/Masquer les colonnes",
+  "search_columns": "Rechercher des colonnes",
+  "search_placeholder": "Rechercher..."
 }

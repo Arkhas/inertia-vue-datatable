@@ -66,7 +66,7 @@ export default {
 </script>
 
 <template>
-  <div :class="cn('flex items-center space-x-2', $attrs.class ?? '')">
+  <div v-if="column.label && (column.sortable || column.toggable)" :class="cn('flex items-center space-x-2', $attrs.class ?? '')">
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
         <Button
