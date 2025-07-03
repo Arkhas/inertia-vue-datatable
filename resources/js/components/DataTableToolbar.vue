@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Table } from '@tanstack/vue-table'
-import { computed, reactive, watch, onMounted } from 'vue'
+import { computed, reactive, watch, onMounted, inject, provide } from 'vue'
+import { useTranslation } from '../i18n/useTranslation'
 
 import { X, ChevronDown } from 'lucide-vue-next';
 import * as LucideIcons from 'lucide-vue-next';
@@ -117,6 +118,12 @@ const getIconComponent = (iconName) => {
   if (!iconName) return null;
   return LucideIcons[iconName] || null;
 };
+
+// Get the translation function from the useTranslation hook
+const { t } = useTranslation();
+
+// Also provide it to child components in case they don't have access to the injected value
+provide('t', t);
 </script>
 
 <template>
@@ -124,7 +131,7 @@ const getIconComponent = (iconName) => {
     <div class="flex flex-1 items-center space-x-2">
       <!-- Always show filters -->
       <Input
-        placeholder="Filter..."
+        :placeholder="t('filter_placeholder')"
         v-model="form.search"
         class="h-8 w-[150px] lg:w-[250px]"
       />
@@ -150,14 +157,14 @@ const getIconComponent = (iconName) => {
           handleFilters({});
         }"
       >
-        Reset
+        {{ t('reset') }}
         <X class="ml-2 h-4 w-4" />
       </Button>
     </div>
     <div class="flex items-center space-x-2">
       <!-- Actions on the right side -->
       <div class="flex items-center space-x-2">
-        <span v-if="hasSelectedRows" class="text-sm font-medium">{{ selectedRows.length }} selected</span>
+        <span v-if="hasSelectedRows" class="text-sm font-medium">{{ selectedRows.length }} {{ t('selected') }}</span>
         <template v-for="action in table.actions" :key="action.name">
           <!-- Handle action groups -->
           <template v-if="action.type === 'group'">

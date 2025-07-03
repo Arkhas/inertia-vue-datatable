@@ -1,0 +1,19 @@
+{
+  "no_results": "No results.",
+  "confirmation": "Confirmation",
+  "confirm_action_message": "Are you sure you want to perform this action?",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "filter_placeholder": "Filter...",
+  "reset": "Reset",
+  "selected": "selected",
+  "showing_results": "Showing {from} to {to} of {total} results",
+  "rows_per_page": "Rows per page",
+  "page_of": "Page {current} of {last}",
+  "go_to_first_page": "Go to first page",
+  "go_to_previous_page": "Go to previous page",
+  "go_to_next_page": "Go to next page",
+  "go_to_last_page": "Go to last page",
+  "view": "View",
+  "toggle_columns": "Toggle columns"
+}

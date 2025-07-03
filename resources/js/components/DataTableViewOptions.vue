@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import {computed, watch, onMounted} from 'vue'
+import {computed, watch, onMounted, inject, provide} from 'vue'
+import {useTranslation} from '../i18n/useTranslation'
 import {SlidersHorizontal} from 'lucide-vue-next'
 import {router} from "@inertiajs/vue3"
 
@@ -73,6 +74,12 @@ const toggleVisibility = (column: Column, visible: boolean) => {
     only: [props.configName]
   });
 }
+
+// Get the translation function from the useTranslation hook
+const { t } = useTranslation();
+
+// Also provide it to child components in case they don't have access to the injected value
+provide('t', t);
 </script>
 
 <template>
@@ -84,11 +91,11 @@ const toggleVisibility = (column: Column, visible: boolean) => {
           class="ml-auto hidden h-8 lg:flex"
       >
         <SlidersHorizontal class="mr-2 h-4 w-4"/>
-        View
+        {{ t('view') }}
       </Button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent @select.prevent align="end" class="w-[150px]">
-      <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+    <DropdownMenuContent align="end" class="w-[150px]">
+      <DropdownMenuLabel>{{ t('toggle_columns') }}</DropdownMenuLabel>
       <DropdownMenuSeparator/>
 
       <DropdownMenuCheckboxItem
@@ -97,6 +104,7 @@ const toggleVisibility = (column: Column, visible: boolean) => {
           class="capitalize"
           :model-value="!column.hidden"
           @update:model-value="(value) => toggleVisibility(column, value)"
+          @click.stop
       >
         {{ column.label }}
       </DropdownMenuCheckboxItem>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import {ref, watch, onMounted} from 'vue'
+import {ref, watch, onMounted, inject, provide} from 'vue'
 import {valueUpdater} from '../lib/utils'
 import {computed} from 'vue'
+import {useTranslation} from '../i18n/useTranslation'
 import {
   Table,
   TableBody,
@@ -75,13 +76,13 @@ const toggleAllRows = (rows, selected) => {
   if (!rows) return;
 
   if (selected) {
-    rows.forEach(row => {
+    rows.forEach((row) => {
       if (row && row._id && !row.checks_disabled) {
         selectedRows.value.add(row._id)
       }
-    })
+    });
   } else {
-    selectedRows.value.clear()
+    selectedRows.value.clear();
   }
 }
 
@@ -309,6 +310,11 @@ const handleCancel = () => {
   pendingRowId.value = null
 }
 
+// Get the translation function from the useTranslation hook
+const { t } = useTranslation();
+
+// Also provide it to child components in case they don't have access to the injected value
+provide('t', t);
 </script>
 
 <template>
@@ -317,9 +323,9 @@ const handleCancel = () => {
     <Dialog :open="showConfirmDialog" @update:open="showConfirmDialog = $event">
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{{ datatable?.actionResult?.confirmData?.title || 'Confirmation' }}</DialogTitle>
+          <DialogTitle>{{ datatable?.actionResult?.confirmData?.title || t('confirmation') }}</DialogTitle>
           <DialogDescription>
-            {{ datatable?.actionResult?.confirmData?.message || 'Are you sure you want to perform this action?' }}
+            {{ datatable?.actionResult?.confirmData?.message || t('confirm_action_message') }}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter class="flex items-center justify-end space-x-2">
@@ -327,14 +333,14 @@ const handleCancel = () => {
             variant="outline"
             @click="handleCancel"
           >
-            {{ datatable?.actionResult?.confirmData?.cancel || 'Cancel' }}
+            {{ datatable?.actionResult?.confirmData?.cancel || t('cancel') }}
           </Button>
           <Button
             variant="default"
             @click="handleConfirm"
             :disabled="datatable?.actionResult?.confirmData?.disabled"
           >
-            {{ datatable?.actionResult?.confirmData?.confirm || 'Confirm' }}
+            {{ datatable?.actionResult?.confirmData?.confirm || t('confirm') }}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -437,7 +443,7 @@ const handleCancel = () => {
                 :colspan="columns.length"
                 class="h-24 text-center"
             >
-              No results.
+              {{ t('no_results', 'No results.') }}
             </TableCell>
           </TableRow>
         </TableBody>

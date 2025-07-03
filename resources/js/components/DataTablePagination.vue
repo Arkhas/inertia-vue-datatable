@@ -4,6 +4,8 @@ import {ChevronRight} from 'lucide-vue-next';
 import {ChevronsLeft} from 'lucide-vue-next';
 import {ChevronsRight} from 'lucide-vue-next';
 import {usePage, router} from "@inertiajs/vue3";
+import {inject, provide} from 'vue';
+import {useTranslation} from '../i18n/useTranslation';
 import {Button} from './ui/button'
 import {
   Select,
@@ -29,17 +31,23 @@ const setPageSize = (pageSize: number) => {
 
   router.reload({data: data});
 }
+
+// Get the translation function from the useTranslation hook
+const { t } = useTranslation();
+
+// Also provide it to child components in case they don't have access to the injected value
+provide('t', t);
 </script>
 
 <template>
   <div class="flex items-center justify-between px-2">
     <div class="flex-1 text-sm text-muted-foreground">
-      Showing {{ table.data.from }} to {{ table.data.to }} of {{ table.data.total }} results
+      {{ t('showing_results', { from: table.data.from, to: table.data.to, total: table.data.total }) }}
     </div>
     <div class="flex items-center space-x-6 lg:space-x-8">
       <div class="flex items-center space-x-2">
         <p class="text-sm font-medium">
-        Rows per page
+        {{ t('rows_per_page') }}
         </p>
         <Select
             :model-value="`${table.data.per_page}`"
@@ -56,8 +64,7 @@ const setPageSize = (pageSize: number) => {
         </Select>
       </div>
       <div class="flex w-[100px] items-center justify-center text-sm font-medium">
-        Page {{ table.data.current_page }} of
-        {{ table.data.last_page }}
+        {{ t('page_of', { current: table.data.current_page, last: table.data.last_page }) }}
       </div>
       <div class="flex items-center space-x-2">
         <Button
@@ -66,7 +73,7 @@ const setPageSize = (pageSize: number) => {
             :disabled="table.data.current_page  == 1"
             @click="goToPage(1)"
         >
-          <span class="sr-only">Go to first page</span>
+          <span class="sr-only">{{ t('go_to_first_page') }}</span>
           <ChevronsLeft class="h-4 w-4"/>
         </Button>
         <Button
@@ -75,7 +82,7 @@ const setPageSize = (pageSize: number) => {
             :disabled="table.data.current_page == 1"
             @click="goToPage(table.data.current_page - 1)"
         >
-          <span class="sr-only">Go to previous page</span>
+          <span class="sr-only">{{ t('go_to_previous_page') }}</span>
           <ChevronLeft class="h-4 w-4"/>
         </Button>
         <Button
@@ -84,7 +91,7 @@ const setPageSize = (pageSize: number) => {
             :disabled="table.data.current_page  >= table.data.last_page"
             @click="goToPage(table.data.current_page + 1)"
         >
-          <span class="sr-only">Go to next page</span>
+          <span class="sr-only">{{ t('go_to_next_page') }}</span>
           <ChevronRight class="h-4 w-4"/>
         </Button>
         <Button
@@ -93,7 +100,7 @@ const setPageSize = (pageSize: number) => {
             :disabled="table.data.current_page  >= table.data.last_page"
             @click="goToPage(table.data.last_page)"
         >
-          <span class="sr-only">Go to last page</span>
+          <span class="sr-only">{{ t('go_to_last_page') }}</span>
           <ChevronsRight class="h-4 w-4"/>
         </Button>
       </div>
