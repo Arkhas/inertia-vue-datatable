@@ -104,7 +104,7 @@ provide('t', t);
           class="capitalize"
           :model-value="!column.hidden"
           @update:model-value="(value) => toggleVisibility(column, value)"
-          @click.stop
+          @select="(event) => event.preventDefault()"
       >
         {{ column.label }}
       </DropdownMenuCheckboxItem>
