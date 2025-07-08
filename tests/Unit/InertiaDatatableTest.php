@@ -1653,4 +1653,59 @@ class InertiaDatatableTest extends TestCase
         // Call render method directly, which should throw an error
         $datatable->render('TestComponent');
     }
+
+    public function test_get_columns_applies_visibility_from_session()
+    {
+        // Create a TestModelDataTable subclass that overrides getFromSession
+        $datatable = new class extends TestModelDataTable {
+            public function getFromSession(string $key, $default = null)
+            {
+                // Return predefined values for visibleColumns
+                if ($key === 'visibleColumns') {
+                    return [
+                        'visible_column' => true,
+                        'hidden_column' => false
+                    ];
+                }
+                return parent::getFromSession($key, $default);
+            }
+
+            // Override getSessionKey to return a fixed key for testing
+            public function getSessionKey(string $suffix = ''): string
+            {
+                return $suffix ? "datatable_{$suffix}" : "datatable";
+            }
+        };
+
+        // Set up table with columns
+        $table = EloquentTable::make(TestModel::query())->columns([
+            Column::make('visible_column'),
+            Column::make('hidden_column'),
+            Column::make('default_column')
+        ]);
+        $datatable->table($table);
+
+        // Get columns and check visibility settings
+        $columns = $datatable->getColumns();
+
+        // Find columns by name
+        $visibleColumn = null;
+        $hiddenColumn = null;
+        $defaultColumn = null;
+
+        foreach ($columns as $column) {
+            if ($column['name'] === 'visible_column') {
+                $visibleColumn = $column;
+            } elseif ($column['name'] === 'hidden_column') {
+                $hiddenColumn = $column;
+            } elseif ($column['name'] === 'default_column') {
+                $defaultColumn = $column;
+            }
+        }
+
+        // Assert that visibility settings from session were applied
+        $this->assertFalse($visibleColumn['hidden']);
+        $this->assertTrue($hiddenColumn['hidden']);
+        $this->assertFalse($defaultColumn['hidden']); // Default should be visible
+    }
 }
