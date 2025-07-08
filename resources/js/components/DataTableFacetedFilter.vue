@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from './ui/popover'
 import { Separator } from './ui/separator'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface DataTableFacetedFilter {
   title?: string
@@ -70,6 +71,8 @@ const clearSelected = () => {
 const getIconComponent = (iconName) => {
   return typeof iconName === 'string' ? LucideIcons[iconName] || null : iconName
 }
+
+const { t } = useTranslation();
 </script>
 
 <template>
@@ -114,7 +117,7 @@ const getIconComponent = (iconName) => {
       <Command>
         <CommandInput :placeholder="title" />
         <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandEmpty>{{ t('no_results_found') }}</CommandEmpty>
           <CommandGroup>
             <CommandItem
               v-for="option in options"
@@ -151,7 +154,7 @@ const getIconComponent = (iconName) => {
                 class="justify-center text-center"
                 @select="clearSelected"
               >
-                Clear filters
+                {{ t('reset')}}
               </CommandItem>
             </CommandGroup>
           </template>

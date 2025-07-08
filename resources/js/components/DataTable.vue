@@ -346,15 +346,15 @@ provide('t', t);
       </DialogContent>
     </Dialog>
 
-    <DataTableToolbar 
+    <DataTableToolbar
       v-if="datatable" 
       :table="datatable" 
       :config-name="config.name"
       :selected-rows="Array.from(selectedRows)"
       @action="handleToolbarAction"
     />
-    <div v-if="datatable" class="rounded-md border">
-      <Table>
+    <div v-if="datatable" class="rounded-md border overflow-x-auto w-full">
+      <Table class="min-w-max w-full">
         <TableHeader>
           <TableRow>
             <TableHead v-for="column in columns" :key="column.name">
