@@ -407,7 +407,10 @@ provide('t', t);
                       <DropdownMenuContent align="end">
                         <template v-if="row[column.name + '_action'] && row[column.name + '_action'].actions">
                           <template v-for="(action, index) in row[column.name + '_action'].actions" :key="action && action.name ? action.name : index">
-                            <DropdownMenuItem 
+                            <a v-if="action.url" :href="action.url" class="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                              {{ getBaseActionName(action.label) }}
+                            </a>
+                            <DropdownMenuItem v-else
                               @click="() => handleRowAction(action, row)"
                             >
                               {{ getBaseActionName(action.label) }}
