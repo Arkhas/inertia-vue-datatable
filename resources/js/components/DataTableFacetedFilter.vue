@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import { computed, ref, watch } from 'vue'
-import { Check, PlusCircle } from 'lucide-vue-next'
 import * as LucideIcons from 'lucide-vue-next'
 
 import { cn } from '../lib/utils'

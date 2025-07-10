@@ -29,7 +29,7 @@ abstract class InertiaDatatable
     protected array         $availablePageSizes     = [10, 25, 100];
     protected array         $additionalSearchFields = [];
     protected ?Request      $request                = null;
-    private string          $name                   = 'dt';
+    protected string        $name                   = 'dt';
 
     public function __construct()
     {
@@ -271,7 +271,7 @@ abstract class InertiaDatatable
             // Special handling for visibleColumns to merge with existing values
             if ($key === 'visibleColumns') {
                 $existingValue = $this->getFromSession($key, []);
-                $value = array_merge($existingValue, $value);
+                $value         = array_merge($existingValue, $value);
             }
 
             $this->storeInSession($key, $value);
