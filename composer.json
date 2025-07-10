@@ -1,6 +1,6 @@
 {
     "name": "arkhas/inertia-vue-datatable",
-    "description": "A Laravel package for dynamic datatables using Inertia.js and React.",
+    "description": "A Laravel package for dynamic datatables using Inertia.js and Vue.",
     "type": "library",
     "license": "MIT",
     "require": {
