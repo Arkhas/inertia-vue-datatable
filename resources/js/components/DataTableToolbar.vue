@@ -296,7 +296,7 @@ provide('t', t);
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="csv">CSV</SelectItem>
-                    <SelectItem value="xlsx">Excel</SelectItem>
+                    <SelectItem value="excel">Excel</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
