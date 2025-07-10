@@ -1,56 +1,360 @@
 <script setup lang="ts">
-import type { Table } from '@tanstack/vue-table'
-import { computed } from 'vue'
+import {computed, reactive, watch, onMounted,onUnmounted, provide} from 'vue'
+import {useTranslation} from '../i18n/useTranslation'
 
-import { X } from 'lucide-vue-next';
-import { Button } from './ui/button'
-import { Input } from './ui/input'
+import {X, ChevronDown} from 'lucide-vue-next';
+import * as LucideIcons from 'lucide-vue-next';
+import {Button} from './ui/button'
+import {Input} from './ui/input'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
 
-import { priorities, statuses } from '../data/data'
 import DataTableFacetedFilter from './DataTableFacetedFilter.vue'
 import DataTableViewOptions from './DataTableViewOptions.vue'
+import {PageProps} from "@/components/type";
+import {router, usePage} from "@inertiajs/vue3";
 
-interface DataTableToolbarProps {
-  table: Table<Record<any, any>>
+const form = reactive({
+  search: null,
+  filters: {} as Record<string, string[]>
+})
+
+const props = defineProps<{
+  table: PageProps,
+  configName: string,
+  selectedRows?: string[] | number[]
+}>()
+
+const emit = defineEmits(['action'])
+
+// Check if any rows are selected
+const hasSelectedRows = computed(() => {
+  return props.selectedRows && props.selectedRows.length > 0
+})
+
+// Watch for changes in the search input and reload the table
+watch(() => form.search, (newValue) => {
+  // Debounce the search to avoid too many requests
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    handleSearch(newValue);
+  }, 300); // Wait 300ms after typing stops
+});
+
+// Watch for changes in filters
+watch(() => form.filters, (newValue) => {
+  handleFilters(newValue);
+}, {deep: true});
+
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+// Handle search
+const handleSearch = (searchValue: string | null) => {
+  // Create a params object with the search parameter
+  const params: Record<string, any> = {};
+
+  // Add the search parameter to the specific datatable config
+  params[props.configName] = {
+    search: searchValue
+  };
+
+  // Send the request to the server
+  router.post(window.location.pathname, params, {
+    preserveState: true,
+    preserveScroll: true,
+    only: [props.configName]
+  });
 }
 
-const props = defineProps<DataTableToolbarProps>()
+// Handle filters
+const handleFilters = (filters: Record<string, string[]>) => {
+  // Create a params object with the filters parameter
+  const params: Record<string, any> = {};
 
-const isFiltered = computed(() => props.table.getState().columnFilters.length > 0)
+  // Add the filters parameter to the specific datatable config
+  params[props.configName] = {
+    filters: filters
+  };
+
+  // Send the request to the server
+  router.post(window.location.pathname, params, {
+    preserveState: true,
+    preserveScroll: true,
+    only: [props.configName]
+  });
+}
+
+// Initialize filters from currentFilters
+const initializeFilters = () => {
+  if (props.table && props.table.currentFilters) {
+    for (const [key, value] of Object.entries(props.table.currentFilters)) {
+      if (Array.isArray(value)) {
+        form.filters[key] = value;
+      } else if (typeof value === 'string') {
+        form.filters[key] = [value];
+      }
+    }
+  }
+}
+
+// Call initializeFilters when component is mounted
+onMounted(() => {
+  initializeFilters();
+});
+onUnmounted(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+});
+
+const isFiltered = computed(() => {
+  return (form.search !== null && form.search !== '') ||
+      Object.values(form.filters).some(filter => filter && filter.length > 0)
+})
+
+// Function to get the icon component by name
+const getIconComponent = (iconName: string | undefined): any => {
+  if (!iconName) return null;
+  return LucideIcons[iconName] || null;
+};
+
+// Export options
+const exportOptions = reactive({
+  exportType: 'csv', // Default export type
+  exportColumns: 'visible', // Default to export visible columns
+  exportRows: 'all' // Default to export all rows
+});
+
+// Handle export
+const handleExport = () => {
+  // Create a data object with the export parameters
+  const params = new URLSearchParams();
+
+  params.append(`${props.configName}[export]`, '1');
+  params.append(`${props.configName}[exportType]`, exportOptions.exportType);
+  params.append(`${props.configName}[exportColumns]`, exportOptions.exportColumns);
+  params.append(`${props.configName}[exportRows]`, exportOptions.exportRows);
+
+// Ajouter les IDs sélectionnés si nécessaire
+  if (exportOptions.exportRows === 'selected' && props.selectedRows && props.selectedRows.length > 0) {
+    params.append(`${props.configName}[selectedIds]`, props.selectedRows.join(','));
+  }
+
+// Construire l'URL finale
+  const url = `${window.location.pathname}?${params.toString()}`;
+
+// Déclencher le téléchargement
+  window.location.href = url;
+};
+
+// Get the translation function from the useTranslation hook
+const {t} = useTranslation();
+
+// Also provide it to child components in case they don't have access to the injected value
+provide('t', t);
+
 </script>
 
 <template>
   <div class="flex items-center justify-between">
     <div class="flex flex-1 items-center space-x-2">
+      <!-- Always show filters -->
       <Input
-        placeholder="Filter tasks..."
-        :model-value="(table.getColumn('title')?.getFilterValue() as string) ?? ''"
-        class="h-8 w-[150px] lg:w-[250px]"
-        @input="table.getColumn('title')?.setFilterValue($event.target.value)"
+          :placeholder="t('filter_placeholder')"
+          v-model="form.search"
+          class="h-8 w-[150px] lg:w-[250px]"
       />
-      <DataTableFacetedFilter
-        v-if="table.getColumn('status')"
-        :column="table.getColumn('status')"
-        title="Status"
-        :options="statuses"
-      />
-      <DataTableFacetedFilter
-        v-if="table.getColumn('priority')"
-        :column="table.getColumn('priority')"
-        title="Priority"
-        :options="priorities"
-      />
+      <template v-for="filter in table.filters" :key="filter.name">
+        <DataTableFacetedFilter
+            :title="filter.label"
+            :options="filter.filterOptions || Object.entries(filter.options).map(([value, label]) => ({ value, label }))"
+            @update:selected="(selected) => {
+            form.filters[filter.name] = selected;
+          }"
+            :selected="form.filters[filter.name] || []"
+        />
+      </template>
 
       <Button
-        v-if="isFiltered"
-        variant="ghost"
-        class="h-8 px-2 lg:px-3"
-        @click="table.resetColumnFilters()"
+          v-if="isFiltered"
+          variant="ghost"
+          class="h-8 px-2 lg:px-3"
+          @click="() => {
+          form.search = null;
+          form.filters = {};
+          handleSearch(null);
+          handleFilters({});
+        }"
       >
-        Reset
-        <X class="ml-2 h-4 w-4" />
+        {{ t('reset') }}
+        <X class="ml-2 h-4 w-4"/>
       </Button>
     </div>
-    <DataTableViewOptions :table="table" />
+    <div class="flex items-center space-x-2">
+      <!-- Actions on the right side -->
+      <div class="flex items-center space-x-2">
+        <span v-if="hasSelectedRows" class="text-sm font-medium">{{}} {{ t('selected') }}</span>
+        <template v-for="action in table.actions" :key="action.name">
+          <!-- Handle action groups -->
+          <template v-if="action.type === 'group'">
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="outline" size="sm" class="h-8" :disabled="!hasSelectedRows" v-bind="action.props || {}">
+                  <component
+                      :is="getIconComponent(action.icon)"
+                      class="mr-2 h-4 w-4"
+                      v-if="action.icon && action.iconPosition !== 'right'"
+                  />
+                  {{ action.label }}
+                  <component
+                      :is="getIconComponent(action.icon)"
+                      class="ml-2 h-4 w-4"
+                      v-if="action.icon && action.iconPosition === 'right'"
+                  />
+                  <ChevronDown class="ml-2 h-4 w-4"/>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                    v-for="groupAction in action.actions"
+                    :key="groupAction.name"
+                    @click="emit('action', groupAction.hasConfirmCallback ? groupAction.name + '_confirm' : groupAction.name)"
+                    :disabled="!hasSelectedRows"
+                    v-bind="groupAction.props || {}"
+                >
+                  <component
+                      :is="getIconComponent(groupAction.icon)"
+                      class="mr-2 h-4 w-4"
+                      v-if="groupAction.icon && groupAction.iconPosition !== 'right'"
+                  />
+                  {{ groupAction.label }}
+                  <component
+                      :is="getIconComponent(groupAction.icon)"
+                      class="ml-2 h-4 w-4"
+                      v-if="groupAction.icon && groupAction.iconPosition === 'right'"
+                  />
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </template>
+          <!-- Handle single actions -->
+          <template v-else>
+            <Button
+                variant="outline"
+                size="sm"
+                class="h-8"
+                @click="emit('action', action.hasConfirmCallback ? action.name + '_confirm' : action.name)"
+                :disabled="!hasSelectedRows"
+                v-bind="action.props || {}"
+            >
+              <component
+                  :is="getIconComponent(action.icon)"
+                  class="mr-2 h-4 w-4"
+                  v-if="action.icon && action.iconPosition !== 'right'"
+              />
+              {{ action.label }}
+              <component
+                  :is="getIconComponent(action.icon)"
+                  class="ml-2 h-4 w-4"
+                  v-if="action.icon && action.iconPosition === 'right'"
+              />
+            </Button>
+          </template>
+        </template>
+        <!-- Export dropdown -->
+        <DropdownMenu v-if="table.exportable">
+          <DropdownMenuTrigger as-child>
+            <Button
+                variant="outline"
+                size="sm"
+                class="h-8"
+            >
+              <component
+                  :is="getIconComponent('FileDown')"
+                  class="mr-2 h-4 w-4"
+              />
+              {{ t('export') }}
+              <ChevronDown class="ml-2 h-4 w-4"/>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" class="w-56">
+            <div class="p-2">
+              <h4 class="mb-2 text-sm font-medium">{{ t('export_format') }}</h4>
+              <div class="mb-4">
+                <Select
+                    :model-value="exportOptions.exportType"
+                    @update:model-value="value => exportOptions.exportType = value"
+                    class="w-full"
+                >
+                  <SelectTrigger class="w-full">
+                    <SelectValue :placeholder="exportOptions.exportType === 'csv' ? 'CSV' : 'Excel'"/>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="csv">CSV</SelectItem>
+                    <SelectItem value="excel">Excel</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <h4 class="mb-2 text-sm font-medium">{{ t('export_columns') }}</h4>
+              <div class="mb-4">
+                <Select
+                    :model-value="exportOptions.exportColumns"
+                    @update:model-value="value => exportOptions.exportColumns = value"
+                    class="w-full"
+                >
+                  <SelectTrigger class="w-full">
+                    <SelectValue :placeholder="exportOptions.exportColumns === 'visible' ? t('visible_columns') : t('all_columns')"/>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="visible">{{ t('visible_columns') }}</SelectItem>
+                    <SelectItem value="all">{{ t('all_columns') }}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <h4 class="mb-2 text-sm font-medium">{{ t('export_rows') }}</h4>
+              <div class="mb-4">
+                <Select
+                    :model-value="exportOptions.exportRows"
+                    @update:model-value="value => exportOptions.exportRows = value"
+                    class="w-full"
+                >
+                  <SelectTrigger class="w-full">
+                    <SelectValue :placeholder="exportOptions.exportRows === 'all' ? t('all_rows') : t('selected_rows')"/>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{{ t('all_rows') }}</SelectItem>
+                    <SelectItem value="selected" :disabled="!hasSelectedRows">
+                      <span :class="{ 'opacity-50': !hasSelectedRows }">{{ t('selected_rows') }}</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button
+                  class="w-full"
+                  @click="handleExport"
+                  :disabled="exportOptions.exportRows === 'selected' && !hasSelectedRows"
+              >
+                {{ t('export_data') }}
+              </Button>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <DataTableViewOptions :table="table" :config-name="configName"/>
+    </div>
   </div>
 </template>

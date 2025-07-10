@@ -50,60 +50,8 @@ class InertiaDatatableTest extends TestCase
         $this->assertCount(2, $datatable->getTable()->getColumns());
     }
 
-    public function test_render_without_filters_or_sorting()
-    {
-        $datatable = new TestModelDataTable();
-        $query     = TestModel::query();
-        $table     = EloquentTable::make($query)->columns([
-            Column::make('name'),
-            Column::make('status'),
-        ]);
 
-        $datatable->table($table);
 
-        // Render without any filters or sorting
-        $datatable->render('Datatable');
-
-        $this->assertEquals(['Alice', 'Bob', 'Charlie'], $query->pluck('name')->toArray());
-    }
-
-    public function test_render_with_invalid_sort_column()
-    {
-        $datatable = new TestModelDataTable();
-
-        $query = TestModel::query();
-        $table = EloquentTable::make($query)->columns([
-            Column::make('name'),
-            Column::make('status'),
-        ]);
-
-        $datatable->table($table);
-
-        // Apply invalid sort column
-        $this->setDatatableRequest(['sort' => 'invalid_column', 'direction' => 'asc']);
-        $datatable->render('Datatable');
-
-        $this->assertEquals(['Alice', 'Bob', 'Charlie'], $query->pluck('name')->toArray());
-    }
-
-    public function test_render_with_no_matching_filters()
-    {
-        $datatable = new TestModelDataTable();
-
-        $query = TestModel::query();
-        $table = EloquentTable::make($query)->columns([
-            Column::make('name'),
-            Column::make('status'),
-        ]);
-
-        $datatable->table($table);
-
-        // Apply a filter that does not match any column
-        request()->merge(['nonexistent' => 'value']);
-        $datatable->render('Datatable');
-
-        $this->assertEquals(['Alice', 'Bob', 'Charlie'], $query->pluck('name')->toArray());
-    }
 
     public function test_apply_filter_when_not_searchable()
     {
@@ -243,15 +191,6 @@ class InertiaDatatableTest extends TestCase
         $this->assertTrue($data->total() >= 3);
     }
 
-    public function test_render_throws_error_without_table()
-    {
-        $datatable = new TestModelDataTable();
-        $this->setDatatableRequest([]);
-        $this->expectException(\Error::class);
-        // Force the evaluation of the data closure which will trigger the error
-        $props = $datatable->getProps();
-        $props['data']();
-    }
 
     public function test_get_results_throws_error_without_table()
     {
@@ -1642,15 +1581,59 @@ class InertiaDatatableTest extends TestCase
         $this->assertInstanceOf(\Symfony\Component\HttpFoundation\BinaryFileResponse::class, $result);
     }
 
-    public function test_render_method_throws_error_without_table()
+
+    public function test_get_columns_applies_visibility_from_session()
     {
-        $datatable = new TestModelDataTable();
-        $this->setDatatableRequest([]);
+        // Create a TestModelDataTable subclass that overrides getFromSession
+        $datatable = new class extends TestModelDataTable {
+            public function getFromSession(string $key, $default = null)
+            {
+                // Return predefined values for visibleColumns
+                if ($key === 'visibleColumns') {
+                    return [
+                        'visible_column' => true,
+                        'hidden_column' => false
+                    ];
+                }
+                return parent::getFromSession($key, $default);
+            }
 
-        $this->expectException(\Error::class);
-        $this->expectExceptionMessage('No table set for datatable');
+            // Override getSessionKey to return a fixed key for testing
+            public function getSessionKey(string $suffix = ''): string
+            {
+                return $suffix ? "datatable_{$suffix}" : "datatable";
+            }
+        };
 
-        // Call render method directly, which should throw an error
-        $datatable->render('TestComponent');
+        // Set up table with columns
+        $table = EloquentTable::make(TestModel::query())->columns([
+            Column::make('visible_column'),
+            Column::make('hidden_column'),
+            Column::make('default_column')
+        ]);
+        $datatable->table($table);
+
+        // Get columns and check visibility settings
+        $columns = $datatable->getColumns();
+
+        // Find columns by name
+        $visibleColumn = null;
+        $hiddenColumn = null;
+        $defaultColumn = null;
+
+        foreach ($columns as $column) {
+            if ($column['name'] === 'visible_column') {
+                $visibleColumn = $column;
+            } elseif ($column['name'] === 'hidden_column') {
+                $hiddenColumn = $column;
+            } elseif ($column['name'] === 'default_column') {
+                $defaultColumn = $column;
+            }
+        }
+
+        // Assert that visibility settings from session were applied
+        $this->assertFalse($visibleColumn['hidden']);
+        $this->assertTrue($hiddenColumn['hidden']);
+        $this->assertFalse($defaultColumn['hidden']); // Default should be visible
     }
 }

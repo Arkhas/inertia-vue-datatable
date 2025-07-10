@@ -45,114 +45,8 @@ class InertiaDatatableHandleExportTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_render_calls_handle_export_when_export_param_is_present()
-    {
-        // Create a mock BinaryFileResponse
-        $mockResponse = $this->createMock(BinaryFileResponse::class);
 
-        // Create a partial mock of TestableInertiaDatatable
-        $datatable = $this->getMockBuilder(TestableInertiaDatatable::class)
-            ->onlyMethods(['handleExport'])
-            ->getMock();
 
-        // Expect handleExport to be called once and return our mock response
-        $datatable->expects($this->once())
-            ->method('handleExport')
-            ->willReturn($mockResponse);
-
-        // Create a table with exportable columns
-        $table = EloquentTable::make(TestModel::query())->columns([
-            Column::make('name')->exportable(),
-            Column::make('status')->exportable(),
-        ]);
-        $table->exportable(true);
-        $datatable->table($table);
-
-        // Make a request with the export parameter
-        $request = new Request(['dt' => ['export' => true]]);
-        $this->app->instance(Request::class, $request);
-
-        // Call render which should trigger handleExport
-        $response = $datatable->render('Datatable');
-
-        // Verify that the response is the mock BinaryFileResponse
-        $this->assertSame($mockResponse, $response);
-    }
-
-    public function test_handle_export_not_exportable()
-    {
-        // Create a datatable
-        $datatable = new TestModelDataTable();
-
-        // Create a table that is not exportable
-        $table = EloquentTable::make(TestModel::query())->columns([
-            Column::make('name'),
-            Column::make('status'),
-        ]);
-        $table->exportable(false);
-        $datatable->table($table);
-
-        // Make a request with the export parameter
-        $request = new Request(['dt' => ['export' => true]]);
-        $this->app->instance(Request::class, $request);
-
-        // Expect an abort with 403
-        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
-        $this->expectExceptionMessage('This table is not exportable');
-
-        // Call render which should trigger handleExport
-        $datatable->render('Datatable');
-    }
-
-    public function test_handle_export_with_all_options()
-    {
-        // Create a mock BinaryFileResponse
-        $mockResponse = $this->createMock(BinaryFileResponse::class);
-
-        // Create a mock ExportService
-        $mockExportService = $this->createMock(ExportService::class);
-        $mockExportService->method('withExportType')->willReturnSelf();
-        $mockExportService->method('withSelectedIds')->willReturnSelf();
-        $mockExportService->method('withVisibleColumns')->willReturnSelf();
-        $mockExportService->method('export')->willReturn($mockResponse);
-
-        // Create a partial mock of TestableInertiaDatatable
-        $datatable = $this->getMockBuilder(TestableInertiaDatatable::class)
-            ->onlyMethods(['handleExport'])
-            ->getMock();
-
-        // Expect handleExport to be called once and return our mock response
-        $datatable->expects($this->once())
-            ->method('handleExport')
-            ->willReturn($mockResponse);
-
-        // Create a table with exportable columns
-        $queryBuilder = $this->getMockBuilder(Builder::class)
-            ->disableOriginalConstructor()
-            ->getMock();
-
-        $table = EloquentTable::make($queryBuilder);
-        $table->exportable(true);
-        $datatable->table($table);
-
-        // Create a request with export parameters
-        $request = new Request([
-            'dt' => [
-                'export' => true,
-                'exportType' => 'excel',
-                'exportColumns' => 'visible',
-                'exportRows' => 'selected',
-                'selectedIds' => '1,2,3'
-            ]
-        ]);
-        $this->app->instance(Request::class, $request);
-
-        // Call render which should trigger handleExport
-        $response = $datatable->render('Datatable');
-
-        // Verify that the response is the mock BinaryFileResponse
-        $this->assertSame($mockResponse, $response);
-    }
 
     public function test_handle_export_implementation()
     {
@@ -213,5 +107,38 @@ class InertiaDatatableHandleExportTest extends TestCase
 
         // Verify that the response is the mock BinaryFileResponse
         $this->assertInstanceOf(BinaryFileResponse::class, $response);
+    }
+
+    public function test_handle_export_not_exportable()
+    {
+        // Create a real TestModel query builder
+        $query = TestModel::query();
+
+        // Create a datatable instance
+        $datatable = new TestableInertiaDatatable();
+
+        // Create a table that is NOT exportable
+        $table = EloquentTable::make($query);
+        $table->columns([
+            \Arkhas\InertiaDatatable\Columns\Column::make('name'),
+            \Arkhas\InertiaDatatable\Columns\Column::make('status'),
+        ]);
+        $table->exportable(false); // Set exportable to false
+        $datatable->table($table);
+
+        // Create a request with export parameters
+        $request = new Request([
+            'dt' => [
+                'export' => true
+            ]
+        ]);
+        $this->app->instance(Request::class, $request);
+
+        // Expect an abort with 403
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        $this->expectExceptionMessage('This table is not exportable');
+
+        // Call handleExport - should throw an exception
+        $datatable->handleExport();
     }
 }

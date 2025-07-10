@@ -24,8 +24,13 @@ The DataTable library provides a powerful and flexible way to create interactive
 
 ## Installation
 
+> **Requirements:**
+> - PHP 8.1+
+> - Laravel 12.0+
+> - Inertia.js 2.0+
+
 ```bash
-composer require arkhas/inertia-datatable
+composer require arkhas/inertia-vue-datatable
 ```
 
 Publish the assets:
@@ -48,7 +53,7 @@ Make sure to include the Tailwind CSS configuration in your project:
 module.exports = {
   content: [
     // ...
-    './vendor/arkhas/inertia-datatable/resources/js/**/*.vue',
+    './vendor/arkhas/inertia-vue-datatable/resources/js/**/*.vue',
   ],
   // ...
 }
@@ -153,7 +158,7 @@ class UserController extends Controller
 
 ```vue
 <script setup>
-import { DataTable } from '@vendor/inertia-datatable';
+import { DataTable } from 'arkhas/inertia-vue-datatable';
 </script>
 
 <template>

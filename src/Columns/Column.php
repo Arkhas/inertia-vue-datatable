@@ -23,6 +23,7 @@ class Column
     protected ?string $width          = null;
     protected bool    $exportable     = true;
     protected         $exportCallback = null;
+    protected bool    $hidden         = false;
 
     public static function make(string $name): self
     {
@@ -30,11 +31,12 @@ class Column
 
         if (!str_contains($name, '.')) {
             $column->name = $name;
+
             return $column;
         }
 
-        $parts = explode('.', $name);
-        $column->name = array_pop($parts);
+        $parts                = explode('.', $name);
+        $column->name         = array_pop($parts);
         $column->relationPath = $parts;
 
         return $column;
@@ -95,7 +97,7 @@ class Column
             call_user_func($this->orderCallback, $query, $order);
         } else {
             if ($this->hasRelation()) {
-                 $query->orderByLeftPowerJoins($this->getFullName(), $order);
+                $query->orderByLeftPowerJoins($this->getFullName(), $order);
             } else {
                 // For regular columns, use a simple orderBy
                 $query->orderBy($this->name, $order);
@@ -124,7 +126,7 @@ class Column
 
             // Handle relations
             $paths = $this->relationPath;
-            $rel = array_shift($paths);
+            $rel   = array_shift($paths);
             $query->orWhereHas($rel, function ($query) use ($paths, $keyword) {
                 $this->buildNestedWhereHas($query, $paths, $this->name, $keyword);
             });
@@ -135,6 +137,7 @@ class Column
     {
         if (empty($path)) {
             $query->where($column, 'like', "%{$keyword}%");
+
             return;
         }
 
@@ -241,6 +244,18 @@ class Column
         return $this->width;
     }
 
+    public function hidden($hidden = true): self
+    {
+        $this->hidden = $hidden;
+
+        return $this;
+    }
+
+    public function getHidden(): bool
+    {
+        return $this->hidden;
+    }
+
     public function exportable(bool $exportable = true): self
     {
         $this->exportable = $exportable;
@@ -272,14 +287,15 @@ class Column
     public function toArray(): array
     {
         return [
-            'name'       => $this->getName(),
-            'label'      => $this->getLabel(),
-            'hasIcon'    => $this->hasIcon(),
-            'sortable'   => $this->isSortable(),
-            'searchable' => $this->isSearchable(),
-            'toggable'   => $this->isToggable(),
+            'name'         => $this->getName(),
+            'label'        => $this->getLabel(),
+            'hasIcon'      => $this->hasIcon(),
+            'sortable'     => $this->isSortable(),
+            'searchable'   => $this->isSearchable(),
+            'toggable'     => $this->isToggable(),
             'iconPosition' => $this->getIconPosition(),
-            'width'      => $this->getWidth(),
+            'width'        => $this->getWidth(),
+            'hidden'       => $this->getHidden(),
         ];
     }
 }

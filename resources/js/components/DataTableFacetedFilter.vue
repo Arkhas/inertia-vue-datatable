@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { Column } from '@tanstack/vue-table'
 import type { Component } from 'vue'
-import type { Task } from '../data/schema'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { defineAsyncComponent } from 'vue'
 import { Check, PlusCircle } from 'lucide-vue-next'
+
+// Cache for dynamically imported icons
+const iconCache = new Map()
 
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
 import Badge from './ui/badge/Badge.vue'
-
 
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from './ui/command'
 import {
@@ -17,21 +18,91 @@ import {
   PopoverTrigger,
 } from './ui/popover'
 import { Separator } from './ui/separator'
+import { useTranslation } from '../i18n/useTranslation'
 
 interface DataTableFacetedFilter {
-  column?: Column<Task, any>
   title?: string
   options: {
     label: string
     value: string
     icon?: Component
+    count?: number
   }[]
+  selected?: string[]
 }
 
 const props = defineProps<DataTableFacetedFilter>()
+const emit = defineEmits<{
+  'update:selected': [selected: string[]]
+}>()
 
-const facets = computed(() => props.column?.getFacetedUniqueValues())
-const selectedValues = computed(() => new Set(props.column?.getFilterValue() as string[]))
+const selectedValuesSet = ref(new Set<string>())
+
+// Initialize selectedValuesSet from props.selected
+watch(() => props.selected, (newSelected) => {
+  if (newSelected) {
+    selectedValuesSet.value = new Set(newSelected)
+  } else {
+    selectedValuesSet.value = new Set()
+  }
+}, { immediate: true })
+
+// Computed property to get the selected values as an array
+const selectedValues = computed(() => selectedValuesSet.value)
+
+// Update the selected values and emit the change
+const updateSelected = (value: string, isSelected: boolean) => {
+  const newSet = new Set(selectedValuesSet.value)
+
+  if (isSelected) {
+    newSet.add(value)
+  } else {
+    newSet.delete(value)
+  }
+
+  selectedValuesSet.value = newSet
+  emit('update:selected', Array.from(newSet))
+}
+
+// Clear all selected values
+const clearSelected = () => {
+  selectedValuesSet.value = new Set()
+  emit('update:selected', [])
+}
+
+// Function to get the icon component by name
+const getIconComponent = (iconName) => {
+  // If iconName is not a string, it's already a component
+  if (typeof iconName !== 'string') {
+    return iconName
+  }
+
+  // Check if the icon is already in the cache
+  if (iconCache.has(iconName)) {
+    return iconCache.get(iconName)
+  }
+
+  // Dynamically import the icon
+  try {
+    // For built-in icons like Check and PlusCircle that are already imported
+    if (iconName === 'Check') return Check
+    if (iconName === 'PlusCircle') return PlusCircle
+
+    // For other icons, try to load them dynamically
+    const asyncIcon = defineAsyncComponent(() => 
+      import(`lucide-vue-next/dist/esm/icons/${iconName.toLowerCase()}`).then(module => module.default || module)
+    )
+
+    // Add to cache
+    iconCache.set(iconName, asyncIcon)
+    return asyncIcon
+  } catch (error) {
+    console.error(`Failed to load icon: ${iconName}`, error)
+    return null
+  }
+}
+
+const { t } = useTranslation();
 </script>
 
 <template>
@@ -76,25 +147,15 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
       <Command>
         <CommandInput :placeholder="title" />
         <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandEmpty>{{ t('no_results_found') }}</CommandEmpty>
           <CommandGroup>
             <CommandItem
               v-for="option in options"
               :key="option.value"
               :value="option"
-              @select="(e) => {
-                console.log(e.detail.value)
+              @select="() => {
                 const isSelected = selectedValues.has(option.value)
-                if (isSelected) {
-                  selectedValues.delete(option.value)
-                }
-                else {
-                  selectedValues.add(option.value)
-                }
-                const filterValues = Array.from(selectedValues)
-                column?.setFilterValue(
-                  filterValues.length ? filterValues : undefined,
-                )
+                updateSelected(option.value, !isSelected)
               }"
             >
               <div
@@ -107,10 +168,10 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
               >
                 <Check :class="cn('h-4 w-4')" />
               </div>
-              <component :is="option.icon" v-if="option.icon" class="mr-2 h-4 w-4 text-muted-foreground" />
+              <component :is="getIconComponent(option.icon)" v-if="option.icon" class="mr-2 h-4 w-4 text-muted-foreground" />
               <span>{{ option.label }}</span>
-              <span v-if="facets?.get(option.value)" class="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
-                {{ facets.get(option.value) }}
+              <span v-if="option.count" class="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs">
+                {{ option.count }}
               </span>
             </CommandItem>
           </CommandGroup>
@@ -121,9 +182,9 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
               <CommandItem
                 :value="{ label: 'Clear filters' }"
                 class="justify-center text-center"
-                @select="column?.setFilterValue(undefined)"
+                @select="clearSelected"
               >
-                Clear filters
+                {{ t('reset')}}
               </CommandItem>
             </CommandGroup>
           </template>

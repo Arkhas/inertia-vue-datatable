@@ -54,7 +54,6 @@ class ExportService
 
         // Create a new exporter class
         $exporter = new DatatableExporter($this->prepareData());
-
         // Export based on the selected type
         if ($this->exportType === 'excel') {
             return Excel::download($exporter, $filename . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);

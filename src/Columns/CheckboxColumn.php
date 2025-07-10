@@ -18,6 +18,7 @@ class CheckboxColumn extends Column
     {
         $instance = new self();
         $instance->name = 'checks';
+        $instance->label = '';
 
         // Set sortable, and searchable to false by default for checkbox columns
         $instance->sortable = false;
@@ -108,6 +109,7 @@ class CheckboxColumn extends Column
             'iconPosition' => $this->getIconPosition() ?? 'left',
             'type'         => 'checkbox',
             'width'        => $this->width,
+            'hidden'       => $this->getHidden(),
         ];
 
         return $columnData;

@@ -4,7 +4,7 @@ import { DialogRoot, useForwardPropsEmits } from "reka-ui";
 const props = defineProps({
   open: { type: Boolean, required: false },
   defaultOpen: { type: Boolean, required: false },
-  modal: { type: Boolean, required: false },
+  modal: { type: Boolean, required: false, default: false },
 });
 const emits = defineEmits(["update:open"]);
 
