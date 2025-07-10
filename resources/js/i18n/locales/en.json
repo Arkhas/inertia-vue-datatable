@@ -17,5 +17,15 @@
   "view": "View",
   "toggle_columns": "Toggle columns",
   "search_columns": "Search columns",
-  "search_placeholder": "Search..."
+  "search_placeholder": "Search...",
+  "export": "Export",
+  "export_data": "Export Data",
+  "export_description": "Choose your export options below.",
+  "export_format": "Export Format",
+  "export_columns": "Columns to Export",
+  "export_rows": "Rows to Export",
+  "visible_columns": "Visible Columns",
+  "all_columns": "All Columns",
+  "all_rows": "All Rows",
+  "selected_rows": "Selected Rows"
 }

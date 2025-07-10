@@ -17,5 +17,15 @@
   "view": "Affichage",
   "toggle_columns": "Afficher/Masquer les colonnes",
   "search_columns": "Rechercher des colonnes",
-  "search_placeholder": "Rechercher..."
+  "search_placeholder": "Rechercher...",
+  "export": "Exporter",
+  "export_data": "Exporter les données",
+  "export_description": "Choisissez vos options d'export ci-dessous.",
+  "export_format": "Format d'export",
+  "export_columns": "Colonnes à exporter",
+  "export_rows": "Lignes à exporter",
+  "visible_columns": "Colonnes visibles",
+  "all_columns": "Toutes les colonnes",
+  "all_rows": "Toutes les lignes",
+  "selected_rows": "Lignes sélectionnées"
 }

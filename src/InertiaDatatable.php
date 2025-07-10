@@ -207,22 +207,43 @@ abstract class InertiaDatatable
         return $return;
     }
 
-    public function render(string $component): JsonResponse|Response|BinaryFileResponse
+    public static function render(string $component, array $data = []): JsonResponse|Response|BinaryFileResponse
     {
-        if (!isset($this->table)) {
+        $dataTable = new static();
+        // setup() is already called in the constructor
+
+        if (!isset($dataTable->table)) {
             throw new Error('No table set for datatable');
         }
 
-        $props = $this->getProps();
+        // Merge datatable props with additional data
+        $props = array_merge($dataTable->getProps(), $data);
 
-        $request = $this->getRequest();
+        $request = $dataTable->getRequest();
         // Handle export if requested
         if ($request->has('export')) {
-            return $this->handleExport();
+            return $dataTable->handleExport();
         }
 
         return Inertia::render($component, $props);
     }
+
+    //public function render(string $component): JsonResponse|Response|BinaryFileResponse
+    //{
+    //    if (!isset($this->table)) {
+    //        throw new Error('No table set for datatable');
+    //    }
+    //
+    //    $props = $this->getProps();
+    //
+    //    $request = $this->getRequest();
+    //    // Handle export if requested
+    //    if ($request->has('export')) {
+    //        return $this->handleExport();
+    //    }
+    //
+    //    return Inertia::render($component, $props);
+    //}
 
     /**
      * Store a value in the session for this datatable
@@ -596,6 +617,7 @@ abstract class InertiaDatatable
      */
     protected function handleExport(): BinaryFileResponse
     {
+
         $request = $this->getRequest();
 
         // Check if the table is exportable
