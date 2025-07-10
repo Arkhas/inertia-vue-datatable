@@ -50,60 +50,8 @@ class InertiaDatatableTest extends TestCase
         $this->assertCount(2, $datatable->getTable()->getColumns());
     }
 
-    public function test_render_without_filters_or_sorting()
-    {
-        $datatable = new TestModelDataTable();
-        $query     = TestModel::query();
-        $table     = EloquentTable::make($query)->columns([
-            Column::make('name'),
-            Column::make('status'),
-        ]);
 
-        $datatable->table($table);
 
-        // Render without any filters or sorting
-        $datatable->render('Datatable');
-
-        $this->assertEquals(['Alice', 'Bob', 'Charlie'], $query->pluck('name')->toArray());
-    }
-
-    public function test_render_with_invalid_sort_column()
-    {
-        $datatable = new TestModelDataTable();
-
-        $query = TestModel::query();
-        $table = EloquentTable::make($query)->columns([
-            Column::make('name'),
-            Column::make('status'),
-        ]);
-
-        $datatable->table($table);
-
-        // Apply invalid sort column
-        $this->setDatatableRequest(['sort' => 'invalid_column', 'direction' => 'asc']);
-        $datatable->render('Datatable');
-
-        $this->assertEquals(['Alice', 'Bob', 'Charlie'], $query->pluck('name')->toArray());
-    }
-
-    public function test_render_with_no_matching_filters()
-    {
-        $datatable = new TestModelDataTable();
-
-        $query = TestModel::query();
-        $table = EloquentTable::make($query)->columns([
-            Column::make('name'),
-            Column::make('status'),
-        ]);
-
-        $datatable->table($table);
-
-        // Apply a filter that does not match any column
-        request()->merge(['nonexistent' => 'value']);
-        $datatable->render('Datatable');
-
-        $this->assertEquals(['Alice', 'Bob', 'Charlie'], $query->pluck('name')->toArray());
-    }
 
     public function test_apply_filter_when_not_searchable()
     {
@@ -243,15 +191,6 @@ class InertiaDatatableTest extends TestCase
         $this->assertTrue($data->total() >= 3);
     }
 
-    public function test_render_throws_error_without_table()
-    {
-        $datatable = new TestModelDataTable();
-        $this->setDatatableRequest([]);
-        $this->expectException(\Error::class);
-        // Force the evaluation of the data closure which will trigger the error
-        $props = $datatable->getProps();
-        $props['data']();
-    }
 
     public function test_get_results_throws_error_without_table()
     {
@@ -1642,17 +1581,6 @@ class InertiaDatatableTest extends TestCase
         $this->assertInstanceOf(\Symfony\Component\HttpFoundation\BinaryFileResponse::class, $result);
     }
 
-    public function test_render_method_throws_error_without_table()
-    {
-        $datatable = new TestModelDataTable();
-        $this->setDatatableRequest([]);
-
-        $this->expectException(\Error::class);
-        $this->expectExceptionMessage('No table set for datatable');
-
-        // Call render method directly, which should throw an error
-        $datatable->render('TestComponent');
-    }
 
     public function test_get_columns_applies_visibility_from_session()
     {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, reactive, watch, onMounted, inject, provide} from 'vue'
+import {computed, reactive, watch, onMounted,onUnmounted, provide} from 'vue'
 import {useTranslation} from '../i18n/useTranslation'
 
 import {X, ChevronDown} from 'lucide-vue-next';
@@ -112,6 +112,11 @@ const initializeFilters = () => {
 onMounted(() => {
   initializeFilters();
 });
+onUnmounted(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+});
 
 const isFiltered = computed(() => {
   return (form.search !== null && form.search !== '') ||
@@ -119,7 +124,7 @@ const isFiltered = computed(() => {
 })
 
 // Function to get the icon component by name
-const getIconComponent = (iconName) => {
+const getIconComponent = (iconName: string | undefined): any => {
   if (!iconName) return null;
   return LucideIcons[iconName] || null;
 };
@@ -158,6 +163,7 @@ const {t} = useTranslation();
 
 // Also provide it to child components in case they don't have access to the injected value
 provide('t', t);
+
 </script>
 
 <template>
@@ -198,7 +204,7 @@ provide('t', t);
     <div class="flex items-center space-x-2">
       <!-- Actions on the right side -->
       <div class="flex items-center space-x-2">
-        <span v-if="hasSelectedRows" class="text-sm font-medium">{{ selectedRows.length }} {{ t('selected') }}</span>
+        <span v-if="hasSelectedRows" class="text-sm font-medium">{{}} {{ t('selected') }}</span>
         <template v-for="action in table.actions" :key="action.name">
           <!-- Handle action groups -->
           <template v-if="action.type === 'group'">

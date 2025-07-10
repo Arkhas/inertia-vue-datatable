@@ -6,7 +6,7 @@ export interface Column {
   hasIcon?: boolean;
   type?: string;
   sortable?: boolean;
-  filterable?: boolean;
+  searchable?: boolean;
   toggable?: boolean;
   width?: string;
 }

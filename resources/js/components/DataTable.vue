@@ -21,7 +21,7 @@ import DataTableColumnHeader from './DataTableColumnHeader.vue'
 import DataTableRowActions from './DataTableRowActions.vue'
 import {FlexRender} from "@tanstack/vue-table";
 import * as LucideIcons from 'lucide-vue-next';
-import { MoreHorizontal } from 'lucide-vue-next';
+import {MoreHorizontal} from 'lucide-vue-next';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,7 +114,7 @@ watch(() => datatable.value?.visibleColumns, (newVisibleColumns) => {
       }
     })
   }
-}, { deep: true })
+}, {deep: true})
 
 // Helper function to send requests to the server
 const sendRequest = (data, onlyActionResult = false) => {
@@ -179,9 +179,9 @@ const getActionName = (actionName) => {
   if (!actionName) return ''
 
   // Remove '_confirm' suffix if present
-  let name = actionName.endsWith('_confirm') 
-    ? actionName.substring(0, actionName.length - '_confirm'.length) 
-    : actionName
+  let name = actionName.endsWith('_confirm')
+      ? actionName.substring(0, actionName.length - '_confirm'.length)
+      : actionName
 
   // Extract base name (e.g., "delete" from "delete_1_task(s)")
   const baseMatch = name.match(/^([^_]+)(?:_\d+.*)?$/)
@@ -200,7 +200,7 @@ const sendActionRequest = (actionName, ids, clearSelection = false) => {
 
   // Clear selection if needed (for non-confirmation actions)
   if (clearSelection) {
-    selectedRows.clear()
+      selectedRows.value.clear()
   }
 }
 
@@ -270,15 +270,15 @@ watch(() => datatable.value?.data?.data, (newData, oldData) => {
       }
     }
   }
-}, { deep: true })
+}, {deep: true})
 
 // Handle confirm action
 const handleConfirm = () => {
   if (!datatable.value?.actionResult?.confirmData) return
 
   // Get action name with fallbacks
-  let actionName = pendingAction.value || 
-                  datatable.value?.actionResult?.pendingActionName || ''
+  let actionName = pendingAction.value ||
+      datatable.value?.actionResult?.pendingActionName || ''
 
   if (!actionName) return
 
@@ -286,8 +286,8 @@ const handleConfirm = () => {
   const baseActionName = getActionName(actionName)
 
   // Get row ID with fallbacks
-  let rowId = pendingRowId.value || 
-             datatable.value?.actionResult?.pendingRowId || null
+  let rowId = pendingRowId.value ||
+      datatable.value?.actionResult?.pendingRowId || null
 
   // Determine which IDs to send
   // If we have a row ID, use that (for row actions)
@@ -311,7 +311,7 @@ const handleCancel = () => {
 }
 
 // Get the translation function from the useTranslation hook
-const { t } = useTranslation();
+const {t} = useTranslation();
 
 // Also provide it to child components in case they don't have access to the injected value
 provide('t', t);
@@ -330,15 +330,15 @@ provide('t', t);
         </DialogHeader>
         <DialogFooter class="flex items-center justify-end space-x-2">
           <Button
-            variant="outline"
-            @click="handleCancel"
+              variant="outline"
+              @click="handleCancel"
           >
             {{ datatable?.actionResult?.confirmData?.cancel || t('cancel') }}
           </Button>
           <Button
-            variant="default"
-            @click="handleConfirm"
-            :disabled="datatable?.actionResult?.confirmData?.disabled"
+              variant="default"
+              @click="handleConfirm"
+              :disabled="datatable?.actionResult?.confirmData?.disabled"
           >
             {{ datatable?.actionResult?.confirmData?.confirm || t('confirm') }}
           </Button>
@@ -347,11 +347,11 @@ provide('t', t);
     </Dialog>
 
     <DataTableToolbar
-      v-if="datatable" 
-      :table="datatable" 
-      :config-name="config.name"
-      :selected-rows="Array.from(selectedRows)"
-      @action="handleToolbarAction"
+        v-if="datatable"
+        :table="datatable"
+        :config-name="config.name"
+        :selected-rows="Array.from(selectedRows)"
+        @action="handleToolbarAction"
     />
     <div v-if="datatable" class="rounded-md border overflow-x-auto w-full">
       <Table class="min-w-max w-full">
@@ -361,10 +361,10 @@ provide('t', t);
               <template v-if="column.type === 'checkbox'">
                 <div class="flex items-center justify-center">
                   <Checkbox
-                    :model-value="areAllRowsSelected(datatable.data.data)"
-                    :indeterminate="areSomeRowsSelected(datatable.data.data)"
-                    @update:model-value="toggleAllRows(datatable.data.data, $event)"
-                    :disabled="datatable.data.data.length === 0"
+                      :model-value="areAllRowsSelected(datatable.data.data)"
+                      :indeterminate="areSomeRowsSelected(datatable.data.data)"
+                      @update:model-value="toggleAllRows(datatable.data.data, $event)"
+                      :disabled="datatable.data.data.length === 0"
                   />
                 </div>
               </template>
@@ -389,9 +389,9 @@ provide('t', t);
                 <template v-if="column.type === 'checkbox'">
                   <div class="flex items-center justify-center">
                     <Checkbox
-                      :model-value="row && row._id ? selectedRows.has(row._id) : false"
-                      @update:model-value="row && row._id ? toggleRowSelection(row._id) : null"
-                      :disabled="row && row[column.name + '_disabled']"
+                        :model-value="row && row._id ? selectedRows.has(row._id) : false"
+                        @update:model-value="row && row._id ? toggleRowSelection(row._id) : null"
+                        :disabled="row && row[column.name + '_disabled']"
                     />
                   </div>
                 </template>
@@ -401,7 +401,7 @@ provide('t', t);
                       <DropdownMenuTrigger as-child>
                         <Button variant="ghost" class="h-8 w-8 p-0">
                           <span class="sr-only">Open menu</span>
-                          <MoreHorizontal class="h-4 w-4" />
+                          <MoreHorizontal class="h-4 w-4"/>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
@@ -411,7 +411,7 @@ provide('t', t);
                               {{ getBaseActionName(action.label) }}
                             </a>
                             <DropdownMenuItem v-else
-                              @click="() => handleRowAction(action, row)"
+                                @click="() => handleRowAction(action, row)"
                             >
                               {{ getBaseActionName(action.label) }}
                             </DropdownMenuItem>
@@ -423,16 +423,16 @@ provide('t', t);
                 </template>
                 <template v-else-if="column && column.hasIcon && row && row[column.name + '_icon']">
                   <div class="flex items-center">
-                    <component 
-                      :is="getIconComponent(row && column ? row[column.name + '_icon'] : null)" 
-                      class="mr-2 h-4 w-4" 
-                      v-if="column && column.iconPosition !== 'right'"
+                    <component
+                        :is="getIconComponent(row && column ? row[column.name + '_icon'] : null)"
+                        class="mr-2 h-4 w-4"
+                        v-if="column && column.iconPosition !== 'right'"
                     />
                     <span v-html="row && column ? row[column.name] : ''"></span>
-                    <component 
-                      :is="getIconComponent(row && column ? row[column.name + '_icon'] : null)" 
-                      class="ml-2 h-4 w-4" 
-                      v-if="column && column.iconPosition === 'right'"
+                    <component
+                        :is="getIconComponent(row && column ? row[column.name + '_icon'] : null)"
+                        class="ml-2 h-4 w-4"
+                        v-if="column && column.iconPosition === 'right'"
                     />
                   </div>
                 </template>
