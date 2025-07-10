@@ -5,7 +5,7 @@ const props = defineProps({
   defaultOpen: { type: Boolean, required: false },
   open: { type: Boolean, required: false },
   dir: { type: String, required: false },
-  modal: { type: Boolean, required: false },
+  modal: { type: Boolean, required: false, default: false },
 });
 const emits = defineEmits(["openAutoFocus", "update:open"]);
 

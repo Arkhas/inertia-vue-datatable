@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import { computed, ref, watch } from 'vue'
-import * as LucideIcons from 'lucide-vue-next'
+import { defineAsyncComponent } from 'vue'
+import { Check, PlusCircle } from 'lucide-vue-next'
+
+// Cache for dynamically imported icons
+const iconCache = new Map()
 
 import { cn } from '../lib/utils'
 import { Button } from './ui/button'
@@ -68,7 +72,34 @@ const clearSelected = () => {
 
 // Function to get the icon component by name
 const getIconComponent = (iconName) => {
-  return typeof iconName === 'string' ? LucideIcons[iconName] || null : iconName
+  // If iconName is not a string, it's already a component
+  if (typeof iconName !== 'string') {
+    return iconName
+  }
+
+  // Check if the icon is already in the cache
+  if (iconCache.has(iconName)) {
+    return iconCache.get(iconName)
+  }
+
+  // Dynamically import the icon
+  try {
+    // For built-in icons like Check and PlusCircle that are already imported
+    if (iconName === 'Check') return Check
+    if (iconName === 'PlusCircle') return PlusCircle
+
+    // For other icons, try to load them dynamically
+    const asyncIcon = defineAsyncComponent(() => 
+      import(`lucide-vue-next/dist/esm/icons/${iconName.toLowerCase()}`).then(module => module.default || module)
+    )
+
+    // Add to cache
+    iconCache.set(iconName, asyncIcon)
+    return asyncIcon
+  } catch (error) {
+    console.error(`Failed to load icon: ${iconName}`, error)
+    return null
+  }
 }
 
 const { t } = useTranslation();
