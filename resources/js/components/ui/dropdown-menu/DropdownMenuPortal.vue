@@ -9,7 +9,7 @@ const props = defineProps({
   as: { type: null, required: false },
 });
 
-const emits = defineEmits(["select"]);
+const emits = defineEmits(["openAutoFocus", "select"]);
 
 const delegatedProps = reactiveOmit(props);
 const forwarded = useForwardPropsEmits(delegatedProps, emits);

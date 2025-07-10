@@ -7,7 +7,7 @@ const props = defineProps({
   dir: { type: String, required: false },
   modal: { type: Boolean, required: false },
 });
-const emits = defineEmits(["update:open"]);
+const emits = defineEmits(["openAutoFocus", "update:open"]);
 
 const forwarded = useForwardPropsEmits(props, emits);
 </script>

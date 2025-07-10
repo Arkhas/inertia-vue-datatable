@@ -35,6 +35,7 @@ const emits = defineEmits([
   "focusOutside",
   "interactOutside",
   "closeAutoFocus",
+  "openAutoFocus",
   "select",
 ]);
 
